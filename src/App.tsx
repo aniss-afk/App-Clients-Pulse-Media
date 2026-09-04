@@ -4,6 +4,7 @@ import { Accueil } from './pages/Accueil';
 import { Creations } from './pages/Creations';
 import { Performance } from './pages/Performance';
 import { Roadmap } from './pages/Roadmap';
+import { Journal } from './pages/Journal';
 import { Rapports } from './pages/Rapports';
 import { Rapport } from './pages/Rapport';
 
@@ -26,6 +27,7 @@ export function App() {
           <Route index element={<Accueil />} />
           <Route path="creations" element={<Creations />} />
           <Route path="performance" element={<Performance />} />
+          <Route path="journal" element={<Journal />} />
           <Route path="roadmap" element={<Roadmap />} />
           <Route path="rapports" element={<Rapports />} />
         </Route>

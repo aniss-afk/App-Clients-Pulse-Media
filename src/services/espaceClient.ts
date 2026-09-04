@@ -103,6 +103,61 @@ export interface Periode {
   fin: string;
 }
 
+export type Canal = Plateforme | 'createurs' | 'boutique' | 'compte';
+
+export const NOM_CANAL: Record<Canal, string> = {
+  ...NOM_PLATEFORME,
+  createurs: 'Créateurs',
+  boutique: 'Boutique',
+  compte: 'Compte',
+};
+
+/**
+ * Une action de l'agence sur le compte, telle que la marque la lit.
+ *
+ * Trois champs et pas un de plus : ce qu'on a fait, pourquoi, et ce
+ * que ça a donné quand c'est mesurable. Le résultat reste vide tant
+ * qu'on ne l'a pas mesuré — écrire « en cours d'observation » vaut
+ * mieux qu'un chiffre inventé.
+ */
+export interface ActionAgence {
+  id: string;
+  date: string;
+  canal: Canal;
+  action: string;
+  raison: string;
+  resultat: string | null;
+}
+
+export type StatutDemande = 'envoyee' | 'prise_en_compte' | 'traitee';
+
+/** Ce que la marque nous demande, depuis son espace. */
+export interface Demande {
+  id: string;
+  date: string;
+  texte: string;
+  statut: StatutDemande;
+  reponse: string | null;
+}
+
+export type TypeDocument = 'facture' | 'contrat' | 'brief' | 'rapport';
+
+export interface Document {
+  id: string;
+  nom: string;
+  type: TypeDocument;
+  date: string;
+  /** Null tant qu'aucun fichier n'est attaché : on ne fabrique pas de lien. */
+  url: string | null;
+}
+
+export const NOM_DOCUMENT: Record<TypeDocument, string> = {
+  facture: 'Facture',
+  contrat: 'Contrat',
+  brief: 'Brief',
+  rapport: 'Rapport',
+};
+
 /* ------------------------------------------------------------------ */
 /* Jeu de démonstration                                                */
 /* ------------------------------------------------------------------ */
@@ -206,6 +261,29 @@ const demo = {
     { id: 'et7', campagneId: 'cp2', date: j(14), titre: 'Brief crème de nuit', detail: 'Angles proposés à votre validation une semaine avant le lancement.', statut: 'a_venir' },
     { id: 'et8', campagneId: 'cp2', date: j(21), titre: 'Lancement crème de nuit', detail: 'Deux créateurs, huit vidéos attendues sur six semaines.', statut: 'a_venir' },
   ] as Etape[],
+
+  actions: [
+    { id: 'ac1', date: j(-1), canal: 'meta', action: 'Budget basculé vers la vidéo « Le test des 7 jours »', raison: 'Elle tient un coût par vente de 14 € contre 31 € pour la moyenne du compte.', resultat: null },
+    { id: 'ac2', date: j(-3), canal: 'meta', action: 'Audience 45-54 ans coupée', raison: 'Coût par nouveau client à 52 €, deux fois la moyenne, sur 10 jours de données.', resultat: 'Coût par nouveau client du compte passé de 33 € à 29 € en cinq jours.' },
+    { id: 'ac3', date: j(-4), canal: 'createurs', action: 'Deux nouvelles créations déposées pour validation', raison: 'Deuxième salve de la vague Sérum Éclat, angles « institut » et « routine du soir ».', resultat: null },
+    { id: 'ac4', date: j(-6), canal: 'google', action: 'Mots-clés concurrents ajoutés en exclusion', raison: 'Douze recherches de marques concurrentes dépensaient 180 € par semaine sans convertir.', resultat: 'Dépense Google inchangée, conversions +11 % la semaine suivante.' },
+    { id: 'ac5', date: j(-8), canal: 'tiktok', action: 'Test lancé sur une audience « soins visage »', raison: 'Le compte n\'avait jamais ciblé cet intérêt ; budget limité à 40 € par jour le temps du test.', resultat: 'Retour déclaré 2,1× après 7 jours : sous le seuil, test arrêté.' },
+    { id: 'ac6', date: j(-11), canal: 'meta', action: 'Création « Ce que personne ne te dit » poussée en publicité', raison: 'Validée par vos soins le matin même ; diffusée depuis le compte du créateur.', resultat: '88 k vues et 9 ventes attribuées à ce jour.' },
+    { id: 'ac7', date: j(-13), canal: 'boutique', action: 'Suivi des ventes par code promo réconcilié avec la boutique', raison: 'Trois commandes du 20 août n\'étaient pas remontées ; corrigé à la source.', resultat: 'Les ventes créateurs du rapport d\'août sont exactes.' },
+    { id: 'ac8', date: j(-15), canal: 'meta', action: 'Diffusion coupée quatre jours', raison: 'Rupture de stock sur le sérum signalée par vos équipes ; payer des clics vers un produit indisponible n\'a pas de sens.', resultat: 'Reprise le 24 août au réassort, sans perte de performance.' },
+    { id: 'ac9', date: j(-19), canal: 'createurs', action: 'Produits expédiés aux deux créateurs de la vague', raison: 'Lancement de la vague Sérum Éclat.', resultat: 'Réception confirmée sous 48 h.' },
+  ] as ActionAgence[],
+
+  demandes: [
+    { id: 'dm1', date: j(-12), texte: 'Est-ce qu\'on peut mettre le coffret découverte en avant pour Noël ?', statut: 'traitee', reponse: 'Oui. On propose une vague dédiée à partir du 10 novembre, brief à votre validation fin octobre. Ajoutée à la roadmap.' },
+  ] as Demande[],
+
+  documents: [
+    { id: 'do1', nom: 'Rapport août 2026', type: 'rapport', date: j(-4), url: null },
+    { id: 'do2', nom: 'Facture septembre 2026', type: 'facture', date: j(-3), url: null },
+    { id: 'do3', nom: 'Brief Sérum Éclat — validé', type: 'brief', date: j(-24), url: null },
+    { id: 'do4', nom: 'Contrat d\'accompagnement', type: 'contrat', date: '2026-05-02', url: null },
+  ] as Document[],
 };
 
 const copie = <T,>(t: T[]): T[] => t.map((x) => ({ ...x }));
@@ -232,6 +310,15 @@ export async function getMetriques(): Promise<MetriqueJour[]> {
 export async function getCa(): Promise<CaJour[]> {
   return copie(genere.ca);
 }
+export async function getActions(): Promise<ActionAgence[]> {
+  return copie(demo.actions);
+}
+export async function getDemandes(): Promise<Demande[]> {
+  return copie(demo.demandes);
+}
+export async function getDocuments(): Promise<Document[]> {
+  return copie(demo.documents);
+}
 
 /* ------------------------------------------------------------------ */
 /* Écritures                                                           */
@@ -256,6 +343,74 @@ export async function demanderRevision(id: string, motif: string): Promise<void>
   if (!c) return;
   c.statut = 'a_revoir';
   c.motif = motif;
+}
+
+/**
+ * Envoyer une demande.
+ *
+ * Elle part telle quelle vers l'équipe, qui la retrouve dans son suivi
+ * de la relation. Rien ne se perd sur une messagerie.
+ */
+export async function envoyerDemande(texte: string): Promise<Demande> {
+  const d: Demande = {
+    id: `dm-${Date.now().toString(36)}`,
+    date: jourISO(new Date()),
+    texte,
+    statut: 'envoyee',
+    reponse: null,
+  };
+  demo.demandes.unshift(d);
+  return d;
+}
+
+/* ------------------------------------------------------------------ */
+/* Synthèse                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * La synthèse de la semaine, en trois phrases.
+ *
+ * Écrite à partir des chiffres et du journal, jamais à côté : si le
+ * retour baisse, la première phrase le dit. Elle remplace le rapport
+ * qu'on lirait en diagonale.
+ */
+export function synthese(
+  actuel: Bilan,
+  avant: Bilan,
+  actions: ActionAgence[],
+  etapes: Etape[],
+  periode: Periode,
+): string[] {
+  const phrases: string[] = [];
+
+  const varCa = variation(actuel.ca, avant.ca);
+  const varMer = actuel.mer !== null && avant.mer !== null ? variation(actuel.mer, avant.mer) : null;
+  const tendance = (v: number | null) =>
+    v === null || Math.abs(v) < 0.5 ? 'stable' : v > 0 ? `en hausse de ${Math.round(v)} %` : `en baisse de ${Math.abs(Math.round(v))} %`;
+
+  phrases.push(
+    `Sur la période, ${actuel.ca.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })} de chiffre d'affaires (${tendance(varCa)}) pour ${actuel.depense.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })} de publicité : chaque euro investi en a rapporté ${actuel.mer === null ? '—' : `${actuel.mer.toFixed(1).replace('.', ',')} €`}, un retour ${tendance(varMer)}.`,
+  );
+
+  const recentes = actions.filter((a) => dans(a.date, periode));
+  if (recentes.length > 0) {
+    const mesurees = recentes.filter((a) => a.resultat);
+    const premiere = mesurees[0] ?? recentes[0];
+    phrases.push(
+      `${recentes.length} action${recentes.length > 1 ? 's' : ''} sur le compte, dont ${premiere.action.charAt(0).toLowerCase()}${premiere.action.slice(1)}${premiere.resultat ? ` — ${premiere.resultat.charAt(0).toLowerCase()}${premiere.resultat.slice(1)}` : ''}`,
+    );
+  }
+
+  const prochaine = etapes
+    .filter((e) => e.statut !== 'fait')
+    .sort((a, b) => (a.date < b.date ? -1 : 1))[0];
+  if (prochaine) {
+    phrases.push(
+      `Prochaine étape : ${prochaine.titre.charAt(0).toLowerCase()}${prochaine.titre.slice(1)}, le ${new Date(prochaine.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}.`,
+    );
+  }
+
+  return phrases;
 }
 
 /* ------------------------------------------------------------------ */

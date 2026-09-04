@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useDonnees } from '../donnees';
 import { Case, Entete, Rangee, Tableau, Vide, Zone } from '../ui/pieces';
-import { bilan, periodeDuMois } from '../services/espaceClient';
-import { euro, mois as libelleMois, ratio } from '../lib';
+import { NOM_DOCUMENT, bilan, periodeDuMois } from '../services/espaceClient';
+import { dateLongue, euro, mois as libelleMois, ratio } from '../lib';
 
 /**
  * Les rapports mensuels.
@@ -56,6 +56,44 @@ export function Rapports() {
                 </Case>
               </Rangee>
             ))}
+          </Tableau>
+        )}
+      </Zone>
+
+      {/* Les pièces qui n'ont pas de page à elles : factures, contrat,
+          briefs signés. Un dépôt, pas une facturation. */}
+      <Zone titre="Documents" compte={d.documents.length}>
+        {d.documents.length === 0 ? (
+          <Vide>Aucun document déposé.</Vide>
+        ) : (
+          <Tableau colonnes={['Document', 'Type', 'Déposé le', '']}>
+            {[...d.documents]
+              .sort((a, b) => (a.date < b.date ? 1 : -1))
+              .map((doc) => (
+                <Rangee key={doc.id}>
+                  <Case>
+                    <span className="font-medium">{doc.nom}</span>
+                  </Case>
+                  <Case discret>{NOM_DOCUMENT[doc.type]}</Case>
+                  <Case discret>{dateLongue(doc.date)}</Case>
+                  <Case aDroite>
+                    {doc.url ? (
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm underline underline-offset-4 text-ink-muted hover:text-ink"
+                      >
+                        Ouvrir
+                      </a>
+                    ) : (
+                      <span className="text-sm text-ink-faint" title="Aucun fichier attaché en démonstration">
+                        Fichier à venir
+                      </span>
+                    )}
+                  </Case>
+                </Rangee>
+              ))}
           </Tableau>
         )}
       </Zone>

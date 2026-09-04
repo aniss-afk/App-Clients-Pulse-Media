@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDonnees } from '../donnees';
-import { Entete, Mesures, Statut, Vide, Zone } from '../ui/pieces';
+import { Bouton, Entete, Mesures, Statut, Vide, Zone } from '../ui/pieces';
+import { Panneau, Texte } from '../ui/Panneau';
+import { Carte } from '../ui/marque';
 import { GraphiqueDepenseCa, Legende } from '../ui/Graphique';
-import { bilan, periodePrecedente, serieJournaliere, variation } from '../services/espaceClient';
+import { bilan, envoyerDemande, periodePrecedente, serieJournaliere, synthese, variation } from '../services/espaceClient';
 import { dateLongue, euro, ratio } from '../lib';
 
 /**
@@ -24,6 +26,11 @@ export function Accueil() {
     () => serieJournaliere(d.metriques, d.ca, d.periode),
     [d.metriques, d.ca, d.periode],
   );
+  const phrases = useMemo(
+    () => synthese(actuel, avant, d.actions, d.etapes, d.periode),
+    [actuel, avant, d.actions, d.etapes, d.periode],
+  );
+  const [demande, setDemande] = useState(false);
 
   if (d.chargement) return <Vide>Chargement…</Vide>;
 
@@ -42,7 +49,19 @@ export function Accueil() {
       <Entete
         titre={`Bonjour, ${d.marque?.contact.split(' ')[0] ?? ''}`}
         sous={`${d.marque?.nom} — ${longueur} derniers jours.`}
+        actions={<Bouton ton="accent" onClick={() => setDemande(true)}>Demander quelque chose</Bouton>}
       />
+
+      {/* La synthèse d'abord : trois phrases écrites depuis les chiffres
+          et le journal. Celui qui ne lit que ça a l'essentiel. */}
+      <Carte className="mb-5">
+        <p className="text-micro font-semibold uppercase text-ink-faint mb-3">En bref</p>
+        <ul className="space-y-2 text-md leading-relaxed max-w-[72ch]">
+          {phrases.map((ph) => (
+            <li key={ph}>{ph}</li>
+          ))}
+        </ul>
+      </Carte>
 
       {aValider.length > 0 && (
         <Zone titre="On vous attend" compte={aValider.length}>
@@ -123,6 +142,24 @@ export function Accueil() {
         )}
       </Zone>
 
+      {d.demandes.length > 0 && (
+        <Zone titre="Vos demandes" compte={d.demandes.length}>
+          <ul className="divide-y divide-line">
+            {d.demandes.map((dm) => (
+              <li key={dm.id} className="px-5 py-4">
+                <div className="flex items-baseline justify-between gap-4">
+                  <p className="text-base">{dm.texte}</p>
+                  <span className="text-xs text-ink-faint shrink-0 tabular-nums">{dateLongue(dm.date)}</span>
+                </div>
+                <p className={`text-sm mt-1.5 leading-relaxed ${dm.reponse ? 'text-ink-muted' : 'text-ink-faint'}`}>
+                  {dm.reponse ? <>→ {dm.reponse}</> : dm.statut === 'prise_en_compte' ? 'Prise en compte, réponse en cours.' : 'Envoyée. L\u2019équipe vous répond sous 24 h ouvrées.'}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Zone>
+      )}
+
       <Zone titre="Campagnes en cours" compte={campagnesActives.length}>
         {campagnesActives.length === 0 ? (
           <Vide>Aucune campagne en cours.</Vide>
@@ -147,6 +184,50 @@ export function Accueil() {
           </ul>
         )}
       </Zone>
+
+      {demande && <PanneauDemande onFermer={() => setDemande(false)} onFait={d.recharger} />}
     </>
+  );
+}
+
+function PanneauDemande({ onFermer, onFait }: { onFermer: () => void; onFait: () => Promise<void> }) {
+  const [texte, setTexte] = useState('');
+  const [faute, setFaute] = useState('');
+  const [enCours, setEnCours] = useState(false);
+
+  async function valider() {
+    if (texte.trim().length < 10) {
+      setFaute('Quelques mots de plus : on veut comprendre du premier coup.');
+      return;
+    }
+    setEnCours(true);
+    try {
+      await envoyerDemande(texte.trim());
+      await onFait();
+      onFermer();
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  return (
+    <Panneau
+      titre="Demander quelque chose"
+      sous="Une idée, une question, un produit à pousser. Ça arrive directement à l'équipe qui suit votre compte."
+      ouvert
+      onFermer={onFermer}
+      onValider={valider}
+      valider="Envoyer"
+      enCours={enCours}
+    >
+      <Texte
+        label="Votre demande"
+        valeur={texte}
+        onChange={(v) => { setTexte(v); setFaute(''); }}
+        lignes={6}
+        placeholder="On aimerait mettre le coffret en avant pour Noël, c'est possible ?"
+        faute={faute}
+      />
+    </Panneau>
   );
 }

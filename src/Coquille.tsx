@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { CalendarDays, Clapperboard, FileText, Route, Sun, TrendingUp } from 'lucide-react';
+import { CalendarDays, Clapperboard, FileText, History, Route, Sun, TrendingUp } from 'lucide-react';
 import { DonneesProvider, useDonnees } from './donnees';
 import { periodeGlissante } from './services/espaceClient';
 import { cn } from './lib';
@@ -9,6 +9,7 @@ const ONGLETS = [
   { chemin: '/', libelle: "Aujourd'hui", exact: true, Icone: Sun },
   { chemin: '/creations', libelle: 'Créations', compteur: true, Icone: Clapperboard },
   { chemin: '/performance', libelle: 'Performance', Icone: TrendingUp },
+  { chemin: '/journal', libelle: 'Journal', Icone: History },
   { chemin: '/roadmap', libelle: 'Roadmap', Icone: Route },
   { chemin: '/rapports', libelle: 'Rapports', Icone: FileText },
 ] as const;
