@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --overlay: rgba(18, 17, 15, 0.42);
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    font-family: 'Archivo', system-ui, -apple-system, sans-serif;
+    scrollbar-gutter: stable;
+  }
+
+  /* Chiffres tabulaires partout : dans un tableau de bord, les colonnes
+     s'alignent par les chiffres, ce qui évite une police à chasse fixe. */
+  body {
+    margin: 0;
+    background-color: theme('colors.cream');
+    color: theme('colors.ink');
+    letter-spacing: -0.01em;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3 {
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0;
+  }
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(18, 17, 15, 0.16); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(18, 17, 15, 0.28); }
+
+::selection { background-color: #FFD2CC; color: #12110F; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
