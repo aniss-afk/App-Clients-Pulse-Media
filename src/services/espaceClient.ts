@@ -9,13 +9,12 @@
  * pas par l'interface : une colonne ajoutée par erreur dans un écran
  * ne peut pas révéler ce qui n'est pas dans les données.
  *
- * Chaque lecture demande d'abord à la base, et retombe sur les
- * données simulées quand l'interrupteur `VITE_DONNEES_REELLES` est
- * fermé, qu'aucun compte n'est connecté, ou que la table est vide.
- * Cette retombée est délibérée : une marque qui ouvre son espace avant
- * que l'agence ait rempli quoi que ce soit verrait sinon des zéros
- * partout et croirait que la campagne ne produit rien. Le jour où la
- * base porte tout, aucun écran ne change.
+ * Chaque lecture demande d'abord à la base et retombe sur les données
+ * simulées quand la table est vide. Cette retombée est délibérée : une
+ * marque qui ouvre son espace avant que l'agence ait rempli quoi que
+ * ce soit verrait sinon des zéros partout et croirait que la campagne
+ * ne produit rien. `VITE_DONNEES_REELLES=false` force la
+ * démonstration, pour une capture d'écran ou une présentation.
  */
 import * as base from './base';
 

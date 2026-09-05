@@ -50,7 +50,7 @@ export function Connexion({ onEntre }: { onEntre: () => void }) {
   return (
     <div className="min-h-screen bg-cream grid place-items-center px-5 py-10">
       <div className="w-full max-w-[400px]">
-        <img src="/logo.webp" alt="Pulse Media" className="h-[24px] w-auto mb-10" />
+        <img src="/logo.webp" alt="Pulse Media" className="h-[34px] w-auto mb-10" />
 
         <h1 className="text-3xl font-bold tracking-[-0.03em] text-balance">
           {mode === 'connexion' ? (

@@ -86,7 +86,7 @@ function Message({
   return (
     <div className="min-h-screen bg-cream grid place-items-center px-5 py-10">
       <div className="w-full max-w-[470px]">
-        <img src="/logo.webp" alt="Pulse Media" className="h-[22px] w-auto mb-9" />
+        <img src="/logo.webp" alt="Pulse Media" className="h-[30px] w-auto mb-9" />
         {icone && (
           <span className="inline-grid place-items-center w-11 h-11 rounded-pill bg-inset text-ink-muted mb-5">
             {icone}

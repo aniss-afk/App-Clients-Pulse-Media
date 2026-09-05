@@ -33,12 +33,17 @@ import type {
  * engagés sans jamais les nommer.
  */
 
-/** Interrupteur global, identique dans les trois applications. */
-export const DONNEES_REELLES = import.meta.env.VITE_DONNEES_REELLES === 'true';
-
-/** Vrai quand un compte est connecté et rattaché à une marque. */
+/**
+ * Vrai quand on lit la base plutôt que la démonstration.
+ *
+ * L'espace ne s'ouvre plus sans session ni sans rattachement à une
+ * marque : à partir de là, montrer les chiffres d'une autre marque
+ * serait pire que de ne rien montrer. Le réel est donc la règle, et
+ * `VITE_DONNEES_REELLES=false` la seule façon de repasser en
+ * démonstration — pour une capture d'écran ou une présentation.
+ */
 export async function branchee(): Promise<boolean> {
-  if (!DONNEES_REELLES) return false;
+  if (import.meta.env.VITE_DONNEES_REELLES === 'false') return false;
   const { data: { session } } = await supabase.auth.getSession();
   return Boolean(session);
 }
