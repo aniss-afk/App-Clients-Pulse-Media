@@ -9,10 +9,15 @@
  * pas par l'interface : une colonne ajoutée par erreur dans un écran
  * ne peut pas révéler ce qui n'est pas dans les données.
  *
- * Tout est simulé pour l'instant. Les fonctions sont asynchrones
- * exprès : le jour où la base répond à leur place, aucun écran ne
- * change.
+ * Chaque lecture demande d'abord à la base, et retombe sur les
+ * données simulées quand l'interrupteur `VITE_DONNEES_REELLES` est
+ * fermé, qu'aucun compte n'est connecté, ou que la table est vide.
+ * Cette retombée est délibérée : une marque qui ouvre son espace avant
+ * que l'agence ait rempli quoi que ce soit verrait sinon des zéros
+ * partout et croirait que la campagne ne produit rien. Le jour où la
+ * base porte tout, aucun écran ne change.
  */
+import * as base from './base';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -288,36 +293,58 @@ const demo = {
 
 const copie = <T,>(t: T[]): T[] => t.map((x) => ({ ...x }));
 
+/**
+ * Demande à la base, retombe sur la démonstration.
+ *
+ * Une table vide compte comme une absence de réponse : c'est le cas le
+ * plus fréquent au démarrage d'un compte, et une liste vide se
+ * distingue mal d'une panne à l'écran.
+ */
+async function reelOuDemo<T>(lire: () => Promise<T[] | null>, demo: T[]): Promise<T[]> {
+  if (!(await base.branchee())) return copie(demo);
+  try {
+    const r = await lire();
+    return r && r.length > 0 ? r : copie(demo);
+  } catch {
+    return copie(demo);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Lectures                                                            */
 /* ------------------------------------------------------------------ */
 
 export async function getMarque(): Promise<Marque> {
-  return { ...demo.marque };
+  if (!(await base.branchee())) return { ...demo.marque };
+  try {
+    return (await base.marque()) ?? { ...demo.marque };
+  } catch {
+    return { ...demo.marque };
+  }
 }
 export async function getCampagnes(): Promise<Campagne[]> {
-  return copie(demo.campagnes);
+  return reelOuDemo(base.campagnes, demo.campagnes);
 }
 export async function getCreations(): Promise<Creation[]> {
-  return copie(demo.creations);
+  return reelOuDemo(base.creations, demo.creations);
 }
 export async function getEtapes(): Promise<Etape[]> {
-  return copie(demo.etapes);
+  return reelOuDemo(base.etapes, demo.etapes);
 }
 export async function getMetriques(): Promise<MetriqueJour[]> {
-  return copie(genere.metriques);
+  return reelOuDemo(base.metriques, genere.metriques);
 }
 export async function getCa(): Promise<CaJour[]> {
-  return copie(genere.ca);
+  return reelOuDemo(base.ca, genere.ca);
 }
 export async function getActions(): Promise<ActionAgence[]> {
-  return copie(demo.actions);
+  return reelOuDemo(base.actions, demo.actions);
 }
 export async function getDemandes(): Promise<Demande[]> {
-  return copie(demo.demandes);
+  return reelOuDemo(base.demandes, demo.demandes);
 }
 export async function getDocuments(): Promise<Document[]> {
-  return copie(demo.documents);
+  return reelOuDemo(base.documents, demo.documents);
 }
 
 /* ------------------------------------------------------------------ */
@@ -326,6 +353,9 @@ export async function getDocuments(): Promise<Document[]> {
 
 /** Valider, c'est autoriser la diffusion. Rien d'autre ne se passe ici. */
 export async function validerCreation(id: string): Promise<void> {
+  if (await base.branchee()) {
+    if (await base.validerCreation(id)) return;
+  }
   const c = demo.creations.find((x) => x.id === id);
   if (!c) return;
   c.statut = 'validee';
@@ -339,6 +369,9 @@ export async function validerCreation(id: string): Promise<void> {
  * raison revient à l'identique, et on a perdu trois jours.
  */
 export async function demanderRevision(id: string, motif: string): Promise<void> {
+  if (await base.branchee()) {
+    if (await base.demanderRevision(id, motif)) return;
+  }
   const c = demo.creations.find((x) => x.id === id);
   if (!c) return;
   c.statut = 'a_revoir';
@@ -352,6 +385,10 @@ export async function demanderRevision(id: string, motif: string): Promise<void>
  * de la relation. Rien ne se perd sur une messagerie.
  */
 export async function envoyerDemande(texte: string): Promise<Demande> {
+  if (await base.branchee()) {
+    const envoyee = await base.envoyerDemande(texte);
+    if (envoyee) return envoyee;
+  }
   const d: Demande = {
     id: `dm-${Date.now().toString(36)}`,
     date: jourISO(new Date()),

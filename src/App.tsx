@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Porte } from './auth/Porte';
 import { Coquille } from './Coquille';
 import { Accueil } from './pages/Accueil';
 import { Creations } from './pages/Creations';
@@ -11,14 +12,16 @@ import { Rapport } from './pages/Rapport';
 /**
  * L'espace client.
  *
- * Pas d'authentification pour l'instant : les données sont simulées et
- * ne concernent qu'une marque. Le jour où plusieurs marques se
- * connectent, c'est le service qui décidera ce qu'elles voient, et les
- * politiques de sécurité de la base derrière lui — pas le routeur.
+ * Tout passe par la porte, y compris le rapport imprimable : un
+ * rapport mensuel se partage par lien, et un lien qui ouvrirait les
+ * chiffres d'une marque sans connexion serait une fuite. Ce que la
+ * marque voit ensuite est décidé par les politiques de la base, pas
+ * par le routeur.
  */
 export function App() {
   return (
     <BrowserRouter>
+      <Porte>
       <Routes>
         {/* Le rapport imprimable sort de la coquille : une page seule,
             sans barre latérale, faite pour le PDF. */}
@@ -33,6 +36,7 @@ export function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Porte>
     </BrowserRouter>
   );
 }
