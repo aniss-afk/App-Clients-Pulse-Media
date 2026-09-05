@@ -51,6 +51,9 @@ export async function deconnecter(): Promise<void> {
   window.location.replace('/');
 }
 
+/** La politique de confidentialité, servie par le site public. */
+export const CONFIDENTIALITE = 'https://bypulsemedia.fr/confidentialite';
+
 export interface Moi {
   id: string;
   email: string;

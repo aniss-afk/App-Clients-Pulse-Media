@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Surligne } from '../ui/marque';
 import { cn } from '../lib';
-import { messageErreur, supabase } from './supabase';
+import { CONFIDENTIALITE, messageErreur, supabase } from './supabase';
 
 /**
  * Entrer dans l'espace de sa marque.
@@ -156,6 +156,17 @@ export function Connexion({ onEntre }: { onEntre: () => void }) {
           >
             {mode === 'connexion' ? 'Créez-le' : 'Connectez-vous'}
           </button>
+        </p>
+
+        <p className="mt-8 text-xs text-ink-faint text-center">
+          <a
+            href={CONFIDENTIALITE}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-4 hover:text-ink transition-colors"
+          >
+            Politique de confidentialité
+          </a>
         </p>
       </div>
     </div>
