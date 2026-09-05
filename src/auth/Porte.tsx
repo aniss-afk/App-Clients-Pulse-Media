@@ -1,7 +1,7 @@
 import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { Clock, Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
 import { Surligne, Trait } from '../ui/marque';
-import { Moi, moi, supabase } from './supabase';
+import { Moi, deconnecter, moi, supabase } from './supabase';
 import { Connexion } from './Connexion';
 
 /**
@@ -53,7 +53,6 @@ export function Porte({ children }: { children: ReactNode }) {
   if (!profil.clientId) {
     return (
       <Message
-        icone={<Clock className="w-5 h-5" />}
         titre={<>On prépare <Surligne>votre espace</Surligne>.</>}
         texte="Votre compte est créé, mais il n'est pas encore rattaché à une marque. C'est l'agence qui fait ce rattachement, et vous recevrez un email dès qu'il est en place."
         secondaire="Si vous pensez que c'est une erreur, répondez au dernier email qu'on vous a envoyé : on regarde tout de suite."
@@ -73,12 +72,10 @@ function Attente() {
 }
 
 function Message({
-  icone,
   titre,
   texte,
   secondaire,
 }: {
-  icone?: ReactNode;
   titre: ReactNode;
   texte: string;
   secondaire?: string;
@@ -87,18 +84,13 @@ function Message({
     <div className="min-h-screen bg-cream grid place-items-center px-5 py-10">
       <div className="w-full max-w-[470px]">
         <img src="/logo.webp" alt="Pulse Media" className="h-[30px] w-auto mb-9" />
-        {icone && (
-          <span className="inline-grid place-items-center w-11 h-11 rounded-pill bg-inset text-ink-muted mb-5">
-            {icone}
-          </span>
-        )}
         <h1 className="text-3xl font-bold tracking-[-0.03em] text-balance">{titre}</h1>
         <Trait className="mt-5" />
         <p className="mt-6 text-md leading-relaxed">{texte}</p>
         {secondaire && <p className="mt-4 text-base text-ink-muted leading-relaxed">{secondaire}</p>}
         <button
           type="button"
-          onClick={() => void supabase.auth.signOut()}
+          onClick={() => void deconnecter()}
           className="mt-9 inline-flex items-center gap-2 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
         >
           <LogOut className="w-4 h-4" /> Se déconnecter

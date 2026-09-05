@@ -15,9 +15,41 @@ const CLE =
   import.meta.env.VITE_SUPABASE_ANON_KEY ??
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNueWp0cWJqenpnYmxteHFjYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzODExNzEsImV4cCI6MjEwMzk1NzE3MX0.HyI9zHRWAIz0mR12B3-H2jhOCEhafSzYMQfwaGAWlMQ';
 
+/**
+ * Chaque espace range sa session sous sa propre clé.
+ *
+ * Les trois applications parlent au même projet, et la clé de stockage
+ * par défaut ne dépend que de la référence du projet : sur une même
+ * origine — en local, sur une prévisualisation — elles se marchaient
+ * dessus, et se déconnecter d'un côté vidait l'autre.
+ */
 export const supabase = createClient(URL, CLE, {
-  auth: { persistSession: true, autoRefreshToken: true },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: 'pulse-marque',
+  },
 });
+
+/**
+ * Se déconnecter, quoi qu'il arrive.
+ *
+ * `signOut()` révoque le jeton auprès du serveur. Sur une session déjà
+ * morte l'appel échoue, la session locale reste, et le bouton n'a l'air
+ * de rien faire. On coupe donc localement d'abord.
+ */
+export async function deconnecter(): Promise<void> {
+  try {
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch {
+    try {
+      window.localStorage.removeItem('pulse-marque');
+    } catch {
+      /* Stockage bloqué : il n'y avait rien à vider. */
+    }
+  }
+  window.location.replace('/');
+}
 
 export interface Moi {
   id: string;

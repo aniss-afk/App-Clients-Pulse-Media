@@ -169,7 +169,7 @@ export function Coquille() {
           <Barre />
         </div>
 
-        <main className="flex-1 min-w-0 px-4 sm:px-8 lg:px-10 py-6 sm:py-9 max-w-[1400px] animate-rise">
+        <main className="flex-1 min-w-0 w-full mx-auto px-4 sm:px-8 lg:px-10 py-6 sm:py-9 max-w-[1600px] animate-rise">
           <Outlet />
         </main>
       </div>
