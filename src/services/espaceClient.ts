@@ -89,6 +89,10 @@ export interface Creation {
   publieeLe: string | null;
   vues: number;
   ventes: number;
+  /** Le fichier déposé avant publication : c'est lui qu'on regarde pour valider. */
+  fichier: string | null;
+  /** Le lien du post, une fois en ligne. */
+  lien: string | null;
 }
 
 export type StatutEtape = 'fait' | 'en_cours' | 'a_venir';

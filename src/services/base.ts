@@ -93,7 +93,7 @@ export async function campagnes(): Promise<Campagne[] | null> {
 export async function creations(): Promise<Creation[] | null> {
   const { data, error } = await supabase
     .from('contenus_marque')
-    .select('id, campaign_id, titre, angle, statut_marque, motif_marque, date_publication, vues, ventes, cree_le')
+    .select('id, campaign_id, titre, angle, statut_marque, motif_marque, date_publication, vues, ventes, fichier, url_publication, cree_le')
     .order('cree_le', { ascending: false });
   if (error || !data) return null;
   return data.map((c) => ({
@@ -116,6 +116,8 @@ export async function creations(): Promise<Creation[] | null> {
     publieeLe: c.date_publication ? jour(c.date_publication) : null,
     vues: num(c.vues),
     ventes: num(c.ventes),
+    fichier: c.fichier ?? null,
+    lien: c.url_publication ?? null,
   }));
 }
 

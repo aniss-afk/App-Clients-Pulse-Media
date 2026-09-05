@@ -4,6 +4,7 @@ import { Bouton, Entete, Statut, Vide, Zone } from '../ui/pieces';
 import { Panneau, Texte } from '../ui/Panneau';
 import { Creation, demanderRevision, validerCreation } from '../services/espaceClient';
 import { compact, dateLongue } from '../lib';
+import { Voir } from '../ui/Video';
 
 /**
  * Les créations, à valider puis en ligne.
@@ -68,7 +69,8 @@ export function Creations() {
                     {c.angle}
                   </p>
                   <p className="text-xs text-ink-faint mt-1">Déposée le {dateLongue(c.deposeLe)}</p>
-                  <div className="mt-auto pt-4 flex flex-wrap items-center gap-2">
+                  <div className="mt-auto pt-4 flex flex-wrap items-center gap-3">
+                    <Voir fichier={c.fichier} lien={c.lien} />
                     <Bouton ton="accent" disabled={enCours} onClick={() => void valider(c.id)}>
                       Valider
                     </Bouton>
@@ -102,6 +104,7 @@ export function Creations() {
                     {produitDe.get(c.campagneId) ?? '—'} · {c.angle}
                   </p>
                   {c.motif && <p className="text-sm text-red-ink mt-0.5">Reprise demandée : {c.motif}</p>}
+                  <Voir fichier={c.fichier} lien={c.lien} />
                 </div>
                 {c.statut === 'en_ligne' && (
                   <div className="text-right shrink-0 text-sm tabular-nums">
