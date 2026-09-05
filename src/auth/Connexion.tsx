@@ -17,6 +17,7 @@ export function Connexion({ onEntre }: { onEntre: () => void }) {
   const [mode, setMode] = useState<'connexion' | 'creation'>('connexion');
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [visible, setVisible] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
@@ -25,8 +26,16 @@ export function Connexion({ onEntre }: { onEntre: () => void }) {
     e.preventDefault();
     setErreur(null);
 
-    if (mode === 'creation' && motDePasse.length < 8) {
-      return setErreur('Choisissez un mot de passe d’au moins 8 caractères.');
+    if (mode === 'creation') {
+      if (motDePasse.length < 8) {
+        return setErreur('Choisissez un mot de passe d’au moins 8 caractères.');
+      }
+      /* La confirmation, seulement à la création : à la connexion on
+         retape un mot de passe qu'on connaît déjà, et le redemander
+         n'attrape aucune faute de frappe — le refus s'en charge. */
+      if (confirmation !== motDePasse) {
+        return setErreur('Les deux mots de passe ne sont pas identiques.');
+      }
     }
 
     setEnCours(true);
@@ -102,6 +111,21 @@ export function Connexion({ onEntre }: { onEntre: () => void }) {
             </span>
           </label>
 
+          {mode === 'creation' && (
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-semibold">Confirmez le mot de passe</span>
+              <input
+                type={visible ? 'text' : 'password'}
+                required
+                autoComplete="new-password"
+                value={confirmation}
+                onChange={(e) => { setConfirmation(e.target.value); setErreur(null); }}
+                placeholder="Le même, pour être sûr"
+                className={champ}
+              />
+            </label>
+          )}
+
           {erreur && (
             <p className="text-sm text-red-ink bg-red-pale rounded-box px-3.5 py-2.5" role="alert">
               {erreur}
@@ -123,16 +147,15 @@ export function Connexion({ onEntre }: { onEntre: () => void }) {
           {mode === 'connexion' ? 'Pas encore de compte ?' : 'Vous en avez déjà un ?'}{' '}
           <button
             type="button"
-            onClick={() => { setMode(mode === 'connexion' ? 'creation' : 'connexion'); setErreur(null); }}
+            onClick={() => {
+              setMode(mode === 'connexion' ? 'creation' : 'connexion');
+              setConfirmation('');
+              setErreur(null);
+            }}
             className={cn('underline underline-offset-4 font-medium text-ink hover:text-red-ink transition-colors')}
           >
             {mode === 'connexion' ? 'Créez-le' : 'Connectez-vous'}
           </button>
-        </p>
-
-        <p className="mt-10 text-xs text-ink-faint text-center leading-relaxed">
-          L’accès est ouvert par l’agence. Si votre espace n’apparaît pas après connexion,
-          c’est que le rattachement n’est pas encore fait.
         </p>
       </div>
     </div>
