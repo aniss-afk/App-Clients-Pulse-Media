@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { useDonnees } from '../donnees';
 import { Case, ChoixPeriode, Bouton, Entete, Mesures, Rangee, Statut, Tableau, Vide, Zone } from '../ui/pieces';
 import { Panneau, Texte } from '../ui/Panneau';
@@ -83,10 +84,10 @@ export function Resultats() {
     <>
       <Entete
         titre={`Bonjour, ${d.marque?.contact.split(' ')[0] ?? ''}`}
-        /* La longueur de la période est déjà sur le sélecteur, à
-           droite du même bandeau : la répéter ici faisait deux fois
-           « 30 jours » sur une ligne. */
-        sous={d.marque?.nom}
+        /* Ni le nom de la marque ni la longueur de la période : elle
+           sait chez qui elle est, et le sélecteur à droite dit déjà
+           « 30 j ». Un sous-titre qui ne raconte rien vaut moins que
+           pas de sous-titre. */
         actions={
           <>
             <ChoixPeriode />
@@ -97,16 +98,29 @@ export function Resultats() {
 
       {aValider.length > 0 && (
         <Zone titre="On vous attend" compte={aValider.length}>
-          <ul className="divide-y divide-line">
+          {/* Le filet rouge court sur toute la zone plutôt que sur
+              chaque ligne : c'est le bloc qui demande une réponse, pas
+              chaque vidéo séparément. Trois traits empilés donnaient
+              trois alertes là où il n'y en a qu'une. */}
+          <ul className="divide-y divide-line shadow-[inset_3px_0_0_0_#FF3B30] rounded-l-card overflow-hidden">
             {aValider.map((c) => (
               <li key={c.id}>
                 <Link
                   to="/creations"
-                  className="flex items-center gap-5 px-5 py-3.5 transition-colors hover:bg-inset shadow-[inset_3px_0_0_0_#FF3B30]"
+                  className="group flex items-baseline gap-x-2.5 gap-y-0.5 flex-wrap px-5 py-4 transition-colors hover:bg-inset"
                 >
-                  <span className="text-base font-medium flex-1">{c.titre}</span>
-                  <span className="text-sm text-ink-faint hidden sm:inline">{c.angle}</span>
-                  <span className="text-ink-faint text-sm">→</span>
+                  {/* Le titre et l'angle se suivent au lieu de se
+                      partager la ligne : collés à droite, l'angle
+                      obligeait à traverser un vide pour comprendre de
+                      quelle vidéo on parle. */}
+                  <span className="text-base font-medium">{c.titre}</span>
+                  <span className="text-sm text-ink-muted">{c.angle}</span>
+                  {c.createur && <span className="text-sm text-ink-faint">{c.createur}</span>}
+                  <ChevronRight
+                    className="ml-auto w-4 h-4 shrink-0 self-center text-ink-faint transition-transform group-hover:translate-x-0.5"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
                 </Link>
               </li>
             ))}
