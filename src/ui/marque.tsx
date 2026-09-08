@@ -2,45 +2,19 @@ import { ReactNode } from 'react';
 import { cn } from '../lib';
 
 /**
- * Les gestes de marque.
+ * Le mot qui porte la marque, en rouge.
  *
- * Ce sont eux qui font reconnaître Pulse Media, plus que la palette :
- * un aplat rouge posé de travers derrière un mot, un trait de marqueur
- * sous un titre. Sans eux on obtient les bonnes couleurs et une
- * interface qui ne ressemble à rien.
+ * C'était un aplat rouge posé derrière le texte, débordant et penché,
+ * doublé d'un trait de marqueur sous les titres. L'aplat mordait sur
+ * les mots voisins et le trait faisait un second signe là où le titre
+ * suffisait. La couleur seule distingue le mot sans le découper de sa
+ * phrase, et elle tient à toutes les tailles.
+ *
+ * Le rouge d'encre est le seul lisible en petit corps sur le crème :
+ * l'aplat reste pour les pastilles et les gros chiffres.
  */
-
-export function Surligne({
-  children,
-  className,
-  epais = false,
-}: {
-  children: ReactNode;
-  className?: string;
-  epais?: boolean;
-}) {
-  return (
-    <span className={cn('relative inline-block', className)}>
-      <span
-        className={cn(
-          'absolute bg-red -rotate-[0.7deg]',
-          epais ? 'inset-x-[-10px] inset-y-[4px]' : 'inset-x-[-6px] inset-y-[2px]',
-        )}
-        aria-hidden="true"
-      />
-      <span className="relative text-ink">{children}</span>
-    </span>
-  );
-}
-
-/** Trait de marqueur sous un titre de zone. */
-export function Trait({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn('block h-[5px] w-9 bg-red -rotate-[0.8deg]', className)}
-      aria-hidden="true"
-    />
-  );
+export function Surligne({ children, className }: { children: ReactNode; className?: string }) {
+  return <span className={cn('text-red-ink', className)}>{children}</span>;
 }
 
 /** Grande surface arrondie, filet très léger, ombre à peine perceptible. */

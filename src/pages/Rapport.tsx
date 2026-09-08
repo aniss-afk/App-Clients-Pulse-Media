@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { DonneesProvider, useDonnees } from '../donnees';
 import { GraphiqueDepenseCa, Legende } from '../ui/Graphique';
-import { Surligne, Trait } from '../ui/marque';
+import { Surligne } from '../ui/marque';
 import { Delta } from '../ui/pieces';
 import {
   NOM_PLATEFORME,
@@ -136,7 +136,7 @@ function Corps() {
         {lecture.length > 0 && (
           <section className="pt-8">
             <Titre>Lecture</Titre>
-            <ul className="space-y-2 text-md leading-relaxed max-w-[64ch]">
+            <ul className="space-y-2 text-md leading-relaxed">
               {lecture.map((l) => (
                 <li key={l}>{l}</li>
               ))}
@@ -174,7 +174,7 @@ function Corps() {
               </tbody>
             </table>
           )}
-          <p className="mt-3 text-xs text-ink-faint max-w-[64ch] leading-relaxed">
+          <p className="mt-3 text-xs text-ink-faint leading-relaxed">
             Le retour déclaré est celui de chaque plateforme, qui compte les mêmes ventes que les
             autres. Le retour sur dépense en haut de page rapporte la dépense totale au chiffre
             d&apos;affaires réel de la boutique : c&apos;est celui à suivre.
@@ -228,7 +228,6 @@ function Titre({ children }: { children: string }) {
   return (
     <div className="mb-4">
       <h2 className="text-md font-bold tracking-[-0.015em] mb-1.5">{children}</h2>
-      <Trait />
     </div>
   );
 }

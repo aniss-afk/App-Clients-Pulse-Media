@@ -289,7 +289,7 @@ const demo = {
   documents: [
     { id: 'do1', nom: 'Rapport août 2026', type: 'rapport', date: j(-4), url: null },
     { id: 'do2', nom: 'Facture septembre 2026', type: 'facture', date: j(-3), url: null },
-    { id: 'do3', nom: 'Brief Sérum Éclat — validé', type: 'brief', date: j(-24), url: null },
+    { id: 'do3', nom: 'Brief Sérum Éclat, validé', type: 'brief', date: j(-24), url: null },
     { id: 'do4', nom: 'Contrat d\'accompagnement', type: 'contrat', date: '2026-05-02', url: null },
   ] as Document[],
 };
@@ -437,7 +437,7 @@ export function synthese(
     const mesurees = recentes.filter((a) => a.resultat);
     const premiere = mesurees[0] ?? recentes[0];
     phrases.push(
-      `${recentes.length} action${recentes.length > 1 ? 's' : ''} sur le compte, dont ${premiere.action.charAt(0).toLowerCase()}${premiere.action.slice(1)}${premiere.resultat ? ` — ${premiere.resultat.charAt(0).toLowerCase()}${premiere.resultat.slice(1)}` : ''}`,
+      `${recentes.length} action${recentes.length > 1 ? 's' : ''} sur le compte, dont ${premiere.action.charAt(0).toLowerCase()}${premiere.action.slice(1)}${premiere.resultat ? ` : ${premiere.resultat.charAt(0).toLowerCase()}${premiere.resultat.slice(1)}` : ''}`,
     );
   }
 

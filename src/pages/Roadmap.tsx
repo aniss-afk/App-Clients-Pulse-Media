@@ -93,7 +93,7 @@ function Frise({
                 <span className="text-xs text-ink-faint">{produitDe.get(e.campagneId) ?? ''}</span>
               )}
             </div>
-            <p className="text-sm text-ink-muted mt-1 max-w-[70ch]">{e.detail}</p>
+            <p className="text-sm text-ink-muted mt-1">{e.detail}</p>
           </div>
         </li>
       ))}

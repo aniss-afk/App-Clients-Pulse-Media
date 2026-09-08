@@ -48,7 +48,7 @@ export function Accueil() {
     <>
       <Entete
         titre={`Bonjour, ${d.marque?.contact.split(' ')[0] ?? ''}`}
-        sous={`${d.marque?.nom} — ${longueur} derniers jours.`}
+        sous={`${d.marque?.nom} · ${longueur} derniers jours.`}
         actions={<Bouton ton="accent" onClick={() => setDemande(true)}>Demander quelque chose</Bouton>}
       />
 
@@ -56,7 +56,7 @@ export function Accueil() {
           et le journal. Celui qui ne lit que ça a l'essentiel. */}
       <Carte className="mb-5">
         <p className="text-micro font-semibold uppercase text-ink-faint mb-3">En bref</p>
-        <ul className="space-y-2 text-md leading-relaxed max-w-[72ch]">
+        <ul className="space-y-2 text-md leading-relaxed">
           {phrases.map((ph) => (
             <li key={ph}>{ph}</li>
           ))}
@@ -134,7 +134,7 @@ export function Accueil() {
                     <span className="text-base font-medium">{e.titre}</span>
                     <Statut valeur={e.statut} />
                   </div>
-                  <p className="text-sm text-ink-muted mt-0.5 max-w-[70ch]">{e.detail}</p>
+                  <p className="text-sm text-ink-muted mt-0.5">{e.detail}</p>
                 </div>
               </li>
             ))}

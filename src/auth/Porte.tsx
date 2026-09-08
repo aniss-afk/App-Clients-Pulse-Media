@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Loader2, LogOut } from 'lucide-react';
-import { Surligne, Trait } from '../ui/marque';
+import { Surligne } from '../ui/marque';
 import { Moi, deconnecter, moi, supabase } from './supabase';
 import { Connexion } from './Connexion';
 
@@ -85,7 +85,6 @@ function Message({
       <div className="w-full max-w-[470px]">
         <img src="/logo.webp" alt="Pulse Media" className="h-[30px] w-auto mb-9" />
         <h1 className="text-3xl font-bold tracking-[-0.03em] text-balance">{titre}</h1>
-        <Trait className="mt-5" />
         <p className="mt-6 text-md leading-relaxed">{texte}</p>
         {secondaire && <p className="mt-4 text-base text-ink-muted leading-relaxed">{secondaire}</p>}
         <button

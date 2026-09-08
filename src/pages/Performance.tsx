@@ -103,7 +103,7 @@ export function Performance() {
               ))}
             </Tableau>
             {surAttribution !== null && (
-              <p className="px-5 pb-5 pt-3 text-sm text-ink-muted leading-relaxed max-w-[70ch]">
+              <p className="px-5 pb-5 pt-3 text-sm text-ink-muted leading-relaxed">
                 Mises bout à bout, les plateformes s&apos;attribuent{' '}
                 <strong className="text-ink">{euro(actuel.revenuAttribue)}</strong> de revenu, soit{' '}
                 <strong className="text-ink">{Math.round(surAttribution)} %</strong> de votre chiffre

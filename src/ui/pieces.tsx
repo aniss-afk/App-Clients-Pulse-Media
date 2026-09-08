@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { cn } from '../lib';
-import { Carte, Surligne, Trait } from './marque';
+import { Carte, Surligne } from './marque';
 
 /* ---------------- En-têtes ---------------- */
 
@@ -17,7 +17,7 @@ export function Entete({
     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4 pb-8">
       <div className="min-w-0">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em]">{titre}</h1>
-        {sous && <p className="mt-2 text-md text-ink-muted max-w-[56ch]">{sous}</p>}
+        {sous && <p className="mt-2 text-md text-ink-muted">{sous}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -47,7 +47,6 @@ export function Zone({
                 <span className="text-ink-faint font-medium"> · {compte}</span>
               )}
             </h2>
-            <Trait />
           </div>
           {action}
         </div>

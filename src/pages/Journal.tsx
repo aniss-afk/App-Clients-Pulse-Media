@@ -47,7 +47,7 @@ export function Journal() {
                   </div>
                   <div className="text-xs font-medium text-ink-muted mt-0.5">{NOM_CANAL[a.canal]}</div>
                 </div>
-                <div className="min-w-0 max-w-[72ch]">
+                <div className="min-w-0">
                   <p className="text-base font-medium">{a.action}</p>
                   <p className="text-sm text-ink-muted mt-1 leading-relaxed">{a.raison}</p>
                   <p className={`text-sm mt-1.5 leading-relaxed ${a.resultat ? 'text-ink' : 'text-ink-faint'}`}>
