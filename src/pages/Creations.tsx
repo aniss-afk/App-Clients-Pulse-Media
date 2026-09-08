@@ -3,17 +3,25 @@ import { useDonnees } from '../donnees';
 import { Bouton, Entete, Statut, Vide, Zone } from '../ui/pieces';
 import { Panneau, Texte } from '../ui/Panneau';
 import { Creation, demanderRevision, validerCreation } from '../services/espaceClient';
-import { compact, dateLongue } from '../lib';
+import { compact, dateLongue, nombre } from '../lib';
 import { Voir } from '../ui/Video';
 
 /**
- * Les créations, à valider puis en ligne.
+ * Ce que les créateurs produisent pour la marque.
  *
- * Ce qui attend un retour est en haut et ne peut pas se manquer. Le
- * reste est un historique : ce qui a été diffusé, et ce que ça a fait.
+ * Ce qui attend un retour est en haut et ne peut pas se manquer. En
+ * dessous, ce qui a été diffusé et ce que ça a fait, puis les
+ * personnes derrière.
+ *
+ * Chaque vidéo porte le prénom et le compte public de qui l'a tournée.
+ * La marque paie ces créateurs : lui montrer un volume et des vidéos
+ * anonymes revenait à lui cacher ce qu'elle achète, et un post publié
+ * est public de toute façon. S'arrêtent au portail : l'email, le
+ * téléphone, l'adresse, la commission. La transparence porte sur le
+ * travail, pas sur le dossier.
  */
 export function Creations() {
-  const { creations, campagnes, chargement, recharger } = useDonnees();
+  const { creations, campagnes, createurs, chargement, recharger } = useDonnees();
   const [aRevoir, setARevoir] = useState<Creation | null>(null);
   const [enCours, setEnCours] = useState(false);
 
@@ -43,7 +51,7 @@ export function Creations() {
     <>
       <Entete
         titre="Créations"
-        sous="Chaque vidéo produite pour vous passe par ici avant d'être diffusée."
+        sous="Chaque vidéo produite pour vous, et qui l'a faite."
       />
 
       <Zone titre="À valider" compte={attente.length}>
@@ -63,6 +71,7 @@ export function Creations() {
                 </div>
                 <div className="min-w-0 flex flex-col">
                   <h3 className="text-base font-medium">{c.titre}</h3>
+                  <Signature creation={c} />
                   <p className="text-sm text-ink-muted mt-1">
                     {produitDe.get(c.campagneId) ?? '—'}
                     <br />
@@ -103,6 +112,7 @@ export function Creations() {
                   <p className="text-sm text-ink-muted truncate">
                     {produitDe.get(c.campagneId) ?? '—'} · {c.angle}
                   </p>
+                  <Signature creation={c} />
                   {c.motif && <p className="text-sm text-red-ink mt-0.5">Reprise demandée : {c.motif}</p>}
                   <Voir fichier={c.fichier} lien={c.lien} />
                 </div>
@@ -114,6 +124,38 @@ export function Creations() {
                     </div>
                   </div>
                 )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Zone>
+
+      <Zone titre="Vos créateurs" compte={createurs.length}>
+        {createurs.length === 0 ? (
+          <Vide>Aucun créateur engagé pour l&apos;instant.</Vide>
+        ) : (
+          <ul className="divide-y divide-line">
+            {createurs.map((cd) => (
+              <li key={cd.id} className="px-5 py-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+                <span className="w-10 h-10 shrink-0 rounded-pill bg-inset border border-line grid place-items-center text-base font-bold text-ink-faint">
+                  {cd.prenom.charAt(0)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-base font-medium">{cd.prenom}</span>
+                  <span className="block text-sm text-ink-muted">
+                    {cd.compte ?? '—'}
+                    {cd.abonnes && ` · ${cd.abonnes} abonnés`}
+                    {cd.univers && ` · ${cd.univers}`}
+                  </span>
+                </span>
+                <span className="text-right shrink-0 text-sm tabular-nums">
+                  <span className="block">
+                    {cd.videosPubliees} vidéo{cd.videosPubliees > 1 ? 's' : ''} en ligne
+                  </span>
+                  <span className="block text-ink-faint">
+                    {nombre(cd.vues)} vue{cd.vues > 1 ? 's' : ''} · {cd.ventes} vente{cd.ventes > 1 ? 's' : ''}
+                  </span>
+                </span>
               </li>
             ))}
           </ul>
@@ -184,5 +226,38 @@ function PanneauReprise({
         aide="Transmis tel quel à l'équipe qui produit la vidéo."
       />
     </Panneau>
+  );
+}
+
+/**
+ * Qui a fait cette vidéo.
+ *
+ * Le prénom et le compte, rien de plus. Le compte est cliquable quand
+ * la vidéo est en ligne : c'est le post public, la marque peut le
+ * vérifier elle-même plutôt que nous croire sur parole.
+ */
+function Signature({ creation }: { creation: Creation }) {
+  if (!creation.createur) return null;
+  const nom = (
+    <>
+      <span className="font-medium text-ink">{creation.createur}</span>
+      {creation.compte && <span className="text-ink-muted"> {creation.compte}</span>}
+    </>
+  );
+  return (
+    <p className="text-sm mt-1">
+      {creation.lien ? (
+        <a
+          href={creation.lien}
+          target="_blank"
+          rel="noreferrer"
+          className="underline underline-offset-4 decoration-line-strong hover:decoration-ink transition-colors"
+        >
+          {nom}
+        </a>
+      ) : (
+        nom
+      )}
+    </p>
   );
 }

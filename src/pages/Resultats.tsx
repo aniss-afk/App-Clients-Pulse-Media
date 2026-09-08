@@ -1,19 +1,34 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDonnees } from '../donnees';
-import { ChoixPeriode, Bouton, Entete, Mesures, Statut, Vide, Zone } from '../ui/pieces';
+import { Case, ChoixPeriode, Bouton, Entete, Mesures, Rangee, Statut, Tableau, Vide, Zone } from '../ui/pieces';
 import { Panneau, Texte } from '../ui/Panneau';
 import { GraphiqueDepenseCa } from '../ui/Graphique';
-import { NOM_CANAL, bilan, envoyerDemande, periodePrecedente, serieJournaliere, variation } from '../services/espaceClient';
-import { dateLongue, euro, ratio } from '../lib';
+import {
+  NOM_CANAL,
+  NOM_PLATEFORME,
+  Plateforme,
+  bilan,
+  envoyerDemande,
+  periodeDuMois,
+  periodePrecedente,
+  serieJournaliere,
+  variation,
+} from '../services/espaceClient';
+import { dateLongue, euro, mois as libelleMois, nombre, ratio } from '../lib';
 
 /**
- * La page d'entrée.
+ * Ce que ça rapporte.
  *
- * Elle répond à deux questions et s'arrête là : est-ce que ça marche,
- * et qu'est-ce qu'on attend de moi. Le détail est à un clic.
+ * Trois pages disaient la même chose sous trois angles : l'accueil
+ * portait quatre chiffres et un graphique, « Performance » les mêmes
+ * quatre chiffres et le même graphique avec le détail par canal,
+ * « Rapports » le même calcul découpé par mois. Une seule page, du plus
+ * gros au plus fin : ce qu'on attend de vous, les chiffres, le jour par
+ * jour, le détail par canal, notre travail, ce qui vient, et les
+ * rapports à imprimer.
  */
-export function Accueil() {
+export function Resultats() {
   const d = useDonnees();
 
   const actuel = useMemo(() => bilan(d.metriques, d.ca, d.periode), [d.metriques, d.ca, d.periode]);
@@ -35,6 +50,12 @@ export function Accueil() {
      `synthese` reste au service : le rapport mensuel s'en sert, et
      là-bas le lecteur n'a pas la page sous les yeux. */
   const [demande, setDemande] = useState(false);
+  /* Les mois où il s'est passé quelque chose, déduits des données
+     plutôt que d'une liste écrite à la main qui finirait par diverger. */
+  const rapports = useMemo(() => {
+    const mois = [...new Set(d.ca.map((c) => c.date.slice(0, 7)))].sort().reverse();
+    return mois.map((m) => ({ mois: m, bilan: bilan(d.metriques, d.ca, periodeDuMois(m)) }));
+  }, [d.metriques, d.ca]);
 
   if (d.chargement) return <Vide>Chargement…</Vide>;
 
@@ -43,6 +64,15 @@ export function Accueil() {
   /* Les trois dernières actions, pas toute l'histoire : le journal
      est à un clic et c'est lui qui la raconte. */
   const recentes = [...d.actions].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 3);
+
+  /* Ce que la page « Performance » disait en plus, et qui n'était que
+     le dépliage de ces mêmes quatre chiffres : où part la dépense, ce
+     que chaque plateforme s'attribue, et le trafic acheté. */
+  const plateformes = Object.keys(actuel.depenseParPlateforme).sort() as Plateforme[];
+  const surAttribution = actuel.ca > 0 ? (actuel.revenuAttribue / actuel.ca) * 100 : null;
+  const dansPeriode = d.metriques.filter((m) => m.date >= d.periode.debut && m.date <= d.periode.fin);
+  const impressions = dansPeriode.reduce((sm, m) => sm + m.impressions, 0);
+  const clics = dansPeriode.reduce((sm, m) => sm + m.clics, 0);
   const prochaines = d.etapes
     .filter((e) => e.statut !== 'fait')
     .sort((a, b) => (a.date < b.date ? -1 : 1))
@@ -120,13 +150,58 @@ export function Accueil() {
         </div>
       </Zone>
 
+      <Zone titre="Par canal" compte={plateformes.length}>
+        {plateformes.length === 0 ? (
+          <Vide>Aucune dépense sur la période.</Vide>
+        ) : (
+          <>
+            <Tableau colonnes={['Canal', 'Dépense', 'Part', 'Retour déclaré']}>
+              {plateformes.map((pf) => (
+                <Rangee key={pf}>
+                  <Case>{NOM_PLATEFORME[pf] ?? pf}</Case>
+                  <Case mono aDroite>{euro(actuel.depenseParPlateforme[pf])}</Case>
+                  <Case mono aDroite>
+                    {actuel.depense > 0
+                      ? `${Math.round((actuel.depenseParPlateforme[pf] / actuel.depense) * 100)} %`
+                      : '—'}
+                  </Case>
+                  <Case mono aDroite>{ratio(actuel.roasParPlateforme[pf])}</Case>
+                </Rangee>
+              ))}
+            </Tableau>
+            {surAttribution !== null && (
+              <p className="px-5 pb-5 pt-3 text-sm text-ink-muted leading-relaxed">
+                Mises bout à bout, les plateformes s&apos;attribuent{' '}
+                <strong className="text-ink">{euro(actuel.revenuAttribue)}</strong> de revenu, soit{' '}
+                <strong className="text-ink">{Math.round(surAttribution)} %</strong> de votre chiffre
+                d&apos;affaires réel de {euro(actuel.ca)}. Chacune compte les mêmes ventes : c&apos;est
+                normal, et c&apos;est pour ça qu&apos;on ne les additionne pas. Le retour sur dépense
+                plus haut, calculé sur la boutique, est le chiffre à suivre.
+              </p>
+            )}
+            <div className="grid gap-px bg-line sm:grid-cols-3 border-t border-line">
+              {[
+                { label: 'Impressions', valeur: nombre(impressions) },
+                { label: 'Clics', valeur: nombre(clics) },
+                { label: 'Coût par clic', valeur: clics > 0 ? euro(actuel.depense / clics) : '—' },
+              ].map((m) => (
+                <div key={m.label} className="bg-paper px-5 py-4">
+                  <p className="text-sm font-medium text-ink-muted">{m.label}</p>
+                  <p className="text-lg font-bold tracking-[-0.02em] tabular-nums mt-1.5">{m.valeur}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </Zone>
+
       <Zone
         titre="Ce qu'on a fait"
         compte={d.actions.length}
         action={
           d.actions.length > 3 ? (
-            <Link to="/journal" className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink transition-colors">
-              Tout le journal
+            <Link to="/suivi" className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink transition-colors">
+              Tout le suivi
             </Link>
           ) : undefined
         }
@@ -216,6 +291,36 @@ export function Accueil() {
               </li>
             ))}
           </ul>
+        )}
+      </Zone>
+
+      <Zone titre="Rapports mensuels" compte={rapports.length}>
+        {rapports.length === 0 ? (
+          <Vide>Aucun rapport disponible.</Vide>
+        ) : (
+          <Tableau colonnes={['Mois', 'Dépense', "Chiffre d'affaires", 'Retour', '']}>
+            {rapports.map((l) => (
+              <Rangee key={l.mois}>
+                <Case>
+                  <span className="font-medium">{libelleMois(l.mois)}</span>
+                  {l.mois === d.periode.fin.slice(0, 7) && (
+                    <span className="text-[11px] text-ink-faint ml-2">en cours</span>
+                  )}
+                </Case>
+                <Case mono aDroite>{euro(l.bilan.depense)}</Case>
+                <Case mono aDroite>{euro(l.bilan.ca)}</Case>
+                <Case mono aDroite>{ratio(l.bilan.mer)}</Case>
+                <Case aDroite>
+                  <Link
+                    to={`/rapports/${l.mois}`}
+                    className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink transition-colors"
+                  >
+                    Ouvrir
+                  </Link>
+                </Case>
+              </Rangee>
+            ))}
+          </Tableau>
         )}
       </Zone>
 

@@ -2,12 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Porte } from './auth/Porte';
 import { Invitation } from './auth/Invitation';
 import { Coquille } from './Coquille';
-import { Accueil } from './pages/Accueil';
+import { Resultats } from './pages/Resultats';
 import { Creations } from './pages/Creations';
-import { Performance } from './pages/Performance';
-import { Roadmap } from './pages/Roadmap';
-import { Journal } from './pages/Journal';
-import { Rapports } from './pages/Rapports';
+import { Suivi } from './pages/Suivi';
 import { Rapport } from './pages/Rapport';
 import { Reglages } from './pages/Reglages';
 
@@ -32,13 +29,17 @@ export function App() {
             sans barre latérale, faite pour le PDF. */}
         <Route path="/rapports/:mois" element={<Rapport />} />
         <Route element={<Coquille />}>
-          <Route index element={<Accueil />} />
+          <Route index element={<Resultats />} />
           <Route path="creations" element={<Creations />} />
-          <Route path="performance" element={<Performance />} />
-          <Route path="journal" element={<Journal />} />
-          <Route path="roadmap" element={<Roadmap />} />
-          <Route path="rapports" element={<Rapports />} />
+          <Route path="suivi" element={<Suivi />} />
           <Route path="reglages" element={<Reglages />} />
+          {/* Les anciennes adresses mènent là où leur contenu a été
+              repris : un lien envoyé par email ne doit pas tomber sur
+              une page morte. */}
+          <Route path="performance" element={<Navigate to="/" replace />} />
+          <Route path="rapports" element={<Navigate to="/" replace />} />
+          <Route path="journal" element={<Navigate to="/suivi" replace />} />
+          <Route path="roadmap" element={<Navigate to="/suivi" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes></Porte>} />

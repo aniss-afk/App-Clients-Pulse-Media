@@ -71,7 +71,6 @@ export interface Campagne {
   statut: StatutCampagne;
   videosAttendues: number;
   videosLivrees: number;
-  /** Un nombre, pas une liste : la marque connaît le volume, pas les personnes. */
   createursEngages: number;
 }
 
@@ -96,6 +95,26 @@ export interface Creation {
   fichier: string | null;
   /** Le lien du post, une fois en ligne. */
   lien: string | null;
+  /* Qui l'a faite. La marque paie des créateurs : elle a le droit de
+     savoir lesquels, et un post publié est public de toute façon. Ce
+     qui s'arrête ici : le prénom et le compte, pas le dossier. */
+  createur: string | null;
+  compte: string | null;
+  reseau: string | null;
+}
+
+/** Un créateur qui travaille pour la marque, et ce qu'il a produit. */
+export interface Createur {
+  id: string;
+  prenom: string;
+  compte: string | null;
+  reseau: string | null;
+  abonnes: string | null;
+  univers: string | null;
+  campagnes: number;
+  videosPubliees: number;
+  vues: number;
+  ventes: number;
 }
 
 export type StatutEtape = 'fait' | 'en_cours' | 'a_venir';
@@ -254,13 +273,19 @@ const demo = {
   ] as Campagne[],
 
   creations: [
-    { id: 'cr1', campagneId: 'cp1', titre: 'Le test des 7 jours', angle: 'La preuve en 7 jours', teinte: '#E7E1D5', duree: '0:34', deposeLe: j(-13), statut: 'en_ligne', motif: null, publieeLe: j(-11), vues: 412000, ventes: 31 },
-    { id: 'cr2', campagneId: 'cp1', titre: 'Ce que personne ne te dit', angle: 'La preuve en 7 jours', teinte: '#F4F0E6', duree: '0:41', deposeLe: j(-9), statut: 'en_ligne', motif: null, publieeLe: j(-6), vues: 88000, ventes: 9 },
-    { id: 'cr3', campagneId: 'cp1', titre: 'Avant / après un mois', angle: 'Le prix contre une séance en institut', teinte: '#FFE9E6', duree: '0:38', deposeLe: j(-2), statut: 'a_valider', motif: null, publieeLe: null, vues: 0, ventes: 0 },
-    { id: 'cr4', campagneId: 'cp1', titre: 'Ma routine du soir', angle: 'La routine du soir', teinte: '#E7E1D5', duree: '0:52', deposeLe: j(-1), statut: 'a_valider', motif: null, publieeLe: null, vues: 0, ventes: 0 },
-    { id: 'cr5', campagneId: 'cp0', titre: 'Trois produits, un rituel', angle: 'Le coffret comme cadeau', teinte: '#F4F0E6', duree: '0:29', deposeLe: j(-72), statut: 'en_ligne', motif: null, publieeLe: j(-70), vues: 156000, ventes: 22 },
-    { id: 'cr6', campagneId: 'cp0', titre: 'Le déballage', angle: 'Le coffret comme cadeau', teinte: '#E7E1D5', duree: '0:47', deposeLe: j(-80), statut: 'a_revoir', motif: 'Le prix affiché à l\'écran n\'était plus le bon.', publieeLe: null, vues: 0, ventes: 0 },
+    { id: 'cr1', campagneId: 'cp1', titre: 'Le test des 7 jours', angle: 'La preuve en 7 jours', teinte: '#E7E1D5', duree: '0:34', deposeLe: j(-13), statut: 'en_ligne', motif: null, publieeLe: j(-11), vues: 412000, ventes: 31, createur: 'Marion', compte: '@marion.ptr', reseau: 'tiktok' },
+    { id: 'cr2', campagneId: 'cp1', titre: 'Ce que personne ne te dit', angle: 'La preuve en 7 jours', teinte: '#F4F0E6', duree: '0:41', deposeLe: j(-9), statut: 'en_ligne', motif: null, publieeLe: j(-6), vues: 88000, ventes: 9, createur: 'Clarisse', compte: '@clarissek', reseau: 'instagram' },
+    { id: 'cr3', campagneId: 'cp1', titre: 'Avant / après un mois', angle: 'Le prix contre une séance en institut', teinte: '#FFE9E6', duree: '0:38', deposeLe: j(-2), statut: 'a_valider', motif: null, publieeLe: null, vues: 0, ventes: 0, createur: 'Marion', compte: '@marion.ptr', reseau: 'tiktok' },
+    { id: 'cr4', campagneId: 'cp1', titre: 'Ma routine du soir', angle: 'La routine du soir', teinte: '#E7E1D5', duree: '0:52', deposeLe: j(-1), statut: 'a_valider', motif: null, publieeLe: null, vues: 0, ventes: 0, createur: 'Astrid', compte: '@silkandfilm', reseau: 'instagram' },
+    { id: 'cr5', campagneId: 'cp0', titre: 'Trois produits, un rituel', angle: 'Le coffret comme cadeau', teinte: '#F4F0E6', duree: '0:29', deposeLe: j(-72), statut: 'en_ligne', motif: null, publieeLe: j(-70), vues: 156000, ventes: 22, createur: 'Clarisse', compte: '@clarissek', reseau: 'instagram' },
+    { id: 'cr6', campagneId: 'cp0', titre: 'Le déballage', angle: 'Le coffret comme cadeau', teinte: '#E7E1D5', duree: '0:47', deposeLe: j(-80), statut: 'a_revoir', motif: 'Le prix affiché à l\'écran n\'était plus le bon.', publieeLe: null, vues: 0, ventes: 0, createur: 'Astrid', compte: '@silkandfilm', reseau: 'instagram' },
   ] as Creation[],
+
+  createurs: [
+    { id: 'cd1', prenom: 'Marion', compte: '@marion.ptr', reseau: 'tiktok', abonnes: '5 000 – 20 000', univers: 'Beauté & mode', campagnes: 2, videosPubliees: 1, vues: 412000, ventes: 31 },
+    { id: 'cd2', prenom: 'Clarisse', compte: '@clarissek', reseau: 'instagram', abonnes: '20 000 – 100 000', univers: 'Beauté & mode', campagnes: 2, videosPubliees: 2, vues: 244000, ventes: 31 },
+    { id: 'cd3', prenom: 'Astrid', compte: '@silkandfilm', reseau: 'instagram', abonnes: '1 000 – 5 000', univers: 'Beauté & mode', campagnes: 1, videosPubliees: 0, vues: 0, ventes: 0 },
+  ] as Createur[],
 
   etapes: [
     { id: 'et1', campagneId: 'cp1', date: j(-24), titre: 'Brief validé', detail: 'Trois angles retenus : la preuve en 7 jours, le prix contre l\'institut, la routine du soir.', statut: 'fait' },
@@ -333,6 +358,9 @@ export async function getCampagnes(): Promise<Campagne[]> {
 }
 export async function getCreations(): Promise<Creation[]> {
   return reelOuDemo(base.creations, demo.creations);
+}
+export async function getCreateurs(): Promise<Createur[]> {
+  return reelOuDemo(base.createurs, demo.createurs);
 }
 export async function getEtapes(): Promise<Etape[]> {
   return reelOuDemo(base.etapes, demo.etapes);

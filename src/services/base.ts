@@ -5,6 +5,7 @@ import type {
   Campagne,
   Canal,
   Creation,
+  Createur,
   Demande,
   Document,
   Etape,
@@ -94,12 +95,13 @@ export async function campagnes(): Promise<Campagne[] | null> {
 }
 
 export async function creations(): Promise<Creation[] | null> {
-  const { data, error } = await supabase
-    .from('contenus_marque')
-    .select('id, campaign_id, titre, angle, statut_marque, motif_marque, date_publication, vues, ventes, fichier, url_publication, cree_le')
-    .order('cree_le', { ascending: false });
+  /* Une fonction et non la vue `contenus_marque` : le prénom et le
+     compte du créateur vivent dans `creators`, sur laquelle la marque
+     n'a aucune politique de lecture. Une vue en `security_invoker` y
+     perdrait les lignes ; la fonction porte le filtre par marque. */
+  const { data, error } = await supabase.rpc('creations_marque');
   if (error || !data) return null;
-  return data.map((c) => ({
+  return (data as Record<string, any>[]).map((c) => ({
     id: c.id,
     campagneId: c.campaign_id,
     titre: c.titre ?? '',
@@ -121,6 +123,26 @@ export async function creations(): Promise<Creation[] | null> {
     ventes: num(c.ventes),
     fichier: c.fichier ?? null,
     lien: c.url_publication ?? null,
+    createur: c.createur_prenom ?? null,
+    compte: c.createur_handle ?? null,
+    reseau: c.createur_reseau ?? null,
+  }));
+}
+
+export async function createurs(): Promise<Createur[] | null> {
+  const { data, error } = await supabase.rpc('createurs_marque');
+  if (error || !data) return null;
+  return (data as Record<string, any>[]).map((c) => ({
+    id: String(c.creator_id),
+    prenom: String(c.prenom ?? ''),
+    compte: c.handle ?? null,
+    reseau: c.reseau ?? null,
+    abonnes: c.abonnes_tranche ?? null,
+    univers: c.univers ?? null,
+    campagnes: num(c.campagnes),
+    videosPubliees: num(c.videos_publiees),
+    vues: num(c.vues),
+    ventes: num(c.ventes),
   }));
 }
 

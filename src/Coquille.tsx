@@ -1,19 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Clapperboard, FileText, History, LogOut, Route, Settings, Sun, TrendingUp } from 'lucide-react';
+import { Clapperboard, LogOut, Route, Settings, TrendingUp } from 'lucide-react';
 import { DonneesProvider, useDonnees } from './donnees';
 import { deconnecter } from './auth/supabase';
 import { useMoi } from './auth/Porte';
 import { cn } from './lib';
 
+/**
+ * Trois entrées, et le compte en pied de rail.
+ *
+ * Il y en avait sept, pour deux questions : ce que ça rapporte, et ce
+ * que les créateurs font. « Performance » et « Rapports » étaient le
+ * même bilan à deux échelles que l'accueil ; « Journal » et
+ * « Roadmap » les deux moitiés d'une même frise. Réglages vit dans le
+ * menu du compte, comme dans l'espace créateur.
+ */
 const ONGLETS = [
-  { chemin: '/', libelle: "Aujourd'hui", exact: true, Icone: Sun },
+  { chemin: '/', libelle: 'Résultats', exact: true, Icone: TrendingUp },
   { chemin: '/creations', libelle: 'Créations', compteur: true, Icone: Clapperboard },
-  { chemin: '/performance', libelle: 'Performance', Icone: TrendingUp },
-  { chemin: '/journal', libelle: 'Journal', Icone: History },
-  { chemin: '/roadmap', libelle: 'Roadmap', Icone: Route },
-  { chemin: '/rapports', libelle: 'Rapports', Icone: FileText },
-  { chemin: '/reglages', libelle: 'Réglages', Icone: Settings },
+  { chemin: '/suivi', libelle: 'Suivi', Icone: Route },
 ] as const;
 
 
