@@ -103,6 +103,32 @@ export interface Creation {
   reseau: string | null;
 }
 
+/**
+ * Un profil soumis à la marque, avant campagne.
+ *
+ * Tout ce qui aide à décider, et rien d'autre : la photo, la
+ * présentation, les comptes publics et deux vidéos. Ni email, ni
+ * téléphone, ni adresse. On choisit quelqu'un sur son travail.
+ */
+export interface Profil {
+  participationId: string;
+  campagneId: string;
+  campagne: string;
+  etape: 'chez_client' | 'retour_client';
+  prenom: string;
+  ville: string | null;
+  bio: string | null;
+  photo: string | null;
+  univers: string[];
+  abonnes: string | null;
+  reseaux: { reseau: string; handle: string; url: string | null; abonnes: number | null; verifie: boolean }[];
+  exemples: { url: string; reseau: string | null }[];
+  /** Pourquoi l'agence l'a mis dans la liste. */
+  argument: string | null;
+  choix: 'retenu' | 'ecarte' | null;
+  avis: string | null;
+}
+
 /** Un créateur qui travaille pour la marque, et ce qu'il a produit. */
 export interface Createur {
   id: string;
@@ -281,6 +307,49 @@ const demo = {
     { id: 'cr6', campagneId: 'cp0', titre: 'Le déballage', angle: 'Le coffret comme cadeau', teinte: '#E7E1D5', duree: '0:47', deposeLe: j(-80), statut: 'a_revoir', motif: 'Le prix affiché à l\'écran n\'était plus le bon.', publieeLe: null, vues: 0, ventes: 0, createur: 'Astrid', compte: '@silkandfilm', reseau: 'instagram' },
   ] as Creation[],
 
+  profils: [
+    {
+      participationId: 'pa1', campagneId: 'cp2', campagne: 'Crème de nuit', etape: 'chez_client',
+      prenom: 'Camille', ville: 'Lyon', photo: null,
+      bio: "Je tourne mes vidéos chez moi, sans studio ni lumière montée. Beauté et soins depuis quatre ans, une routine par semaine.",
+      univers: ['Beauté & mode'], abonnes: '20 000 – 100 000',
+      reseaux: [
+        { reseau: 'tiktok', handle: '@camille.soins', url: 'https://tiktok.com/@camille.soins', abonnes: 48200, verifie: true },
+        { reseau: 'instagram', handle: '@camille.soins', url: 'https://instagram.com/camille.soins', abonnes: 12400, verifie: true },
+      ],
+      exemples: [
+        { url: 'https://www.tiktok.com/@camille.soins/video/1', reseau: 'tiktok' },
+        { url: 'https://www.tiktok.com/@camille.soins/video/2', reseau: 'tiktok' },
+      ],
+      argument: "Audience très proche de la vôtre, et elle parle déjà de soins du soir sans qu'on le lui demande.",
+      choix: null, avis: null,
+    },
+    {
+      participationId: 'pa2', campagneId: 'cp2', campagne: 'Crème de nuit', etape: 'chez_client',
+      prenom: 'Yasmine', ville: 'Paris', photo: null,
+      bio: "Contenus courts, ton direct. Je teste et je dis ce que j'en pense, y compris quand ça ne marche pas.",
+      univers: ['Beauté & mode', 'Lifestyle'], abonnes: '5 000 – 20 000',
+      reseaux: [
+        { reseau: 'instagram', handle: '@yasmine.rvl', url: 'https://instagram.com/yasmine.rvl', abonnes: 18700, verifie: true },
+      ],
+      exemples: [{ url: 'https://www.instagram.com/reel/abc', reseau: 'instagram' }],
+      argument: 'Le meilleur taux de vue complète du vivier sur les formats de plus de 45 secondes.',
+      choix: null, avis: null,
+    },
+    {
+      participationId: 'pa3', campagneId: 'cp2', campagne: 'Crème de nuit', etape: 'chez_client',
+      prenom: 'Théo', ville: 'Bordeaux', photo: null,
+      bio: 'Soins pour peaux sensibles, un angle que peu de comptes tiennent.',
+      univers: ['Beauté & mode'], abonnes: '1 000 – 5 000',
+      reseaux: [
+        { reseau: 'tiktok', handle: '@theo.peau', url: 'https://tiktok.com/@theo.peau', abonnes: 4300, verifie: false },
+      ],
+      exemples: [],
+      argument: "Petite audience mais très engagée, et un angle « peau sensible » qui manque à la vague.",
+      choix: null, avis: null,
+    },
+  ] as Profil[],
+
   createurs: [
     { id: 'cd1', prenom: 'Marion', compte: '@marion.ptr', reseau: 'tiktok', abonnes: '5 000 – 20 000', univers: 'Beauté & mode', campagnes: 2, videosPubliees: 1, vues: 412000, ventes: 31 },
     { id: 'cd2', prenom: 'Clarisse', compte: '@clarissek', reseau: 'instagram', abonnes: '20 000 – 100 000', univers: 'Beauté & mode', campagnes: 2, videosPubliees: 2, vues: 244000, ventes: 31 },
@@ -361,6 +430,25 @@ export async function getCreations(): Promise<Creation[]> {
 }
 export async function getCreateurs(): Promise<Createur[]> {
   return reelOuDemo(base.createurs, demo.createurs);
+}
+export async function getProfils(): Promise<Profil[]> {
+  return reelOuDemo(base.profils, demo.profils);
+}
+
+/**
+ * La marque tranche un profil.
+ *
+ * Elle peut revenir sur son choix tant qu'elle n'a pas bouclé : un
+ * avis donné en trois secondes se regrette, et refuser quelqu'un est
+ * une décision qui mérite un aller-retour.
+ */
+export async function trancherProfil(participationId: string, retenu: boolean, avis?: string): Promise<void> {
+  await base.trancherProfil(participationId, retenu, avis ?? null);
+}
+
+/** La marque rend sa copie. Rien ne part aux créateurs : l'agence confirme derrière. */
+export async function bouclerSelection(campagneId: string): Promise<void> {
+  await base.bouclerSelection(campagneId);
 }
 export async function getEtapes(): Promise<Etape[]> {
   return reelOuDemo(base.etapes, demo.etapes);

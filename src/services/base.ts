@@ -6,6 +6,7 @@ import type {
   Canal,
   Creation,
   Createur,
+  Profil,
   Demande,
   Document,
   Etape,
@@ -281,4 +282,44 @@ export async function envoyerDemande(texte: string): Promise<Demande | null> {
     statut: (data.statut as StatutDemande) ?? 'envoyee',
     reponse: data.reponse,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* La sélection des créateurs                                          */
+/* ------------------------------------------------------------------ */
+
+export async function profils(): Promise<Profil[] | null> {
+  const { data, error } = await supabase.rpc('selection_marque');
+  if (error || !data) return null;
+  return (data as Record<string, any>[]).map((r) => ({
+    participationId: String(r.participation_id),
+    campagneId: String(r.campaign_id),
+    campagne: String(r.campagne ?? ''),
+    etape: (r.etape_selection === 'retour_client' ? 'retour_client' : 'chez_client') as Profil['etape'],
+    prenom: String(r.prenom ?? ''),
+    ville: r.ville ?? null,
+    bio: r.bio ?? null,
+    photo: r.photo ?? null,
+    univers: (r.univers ?? []) as string[],
+    abonnes: r.abonnes_tranche ?? null,
+    reseaux: (r.reseaux ?? []) as Profil['reseaux'],
+    exemples: (r.exemples ?? []) as Profil['exemples'],
+    argument: r.argument ?? null,
+    choix: (r.selection === 'retenu' || r.selection === 'ecarte' ? r.selection : null) as Profil['choix'],
+    avis: r.avis_client ?? null,
+  }));
+}
+
+export async function trancherProfil(participationId: string, retenu: boolean, avis: string | null): Promise<void> {
+  const { error } = await supabase.rpc('trancher_profil', {
+    p_participation: participationId,
+    p_retenu: retenu,
+    p_avis: avis,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function bouclerSelection(campagneId: string): Promise<void> {
+  const { error } = await supabase.rpc('boucler_selection', { p_campagne: campagneId });
+  if (error) throw new Error(error.message);
 }

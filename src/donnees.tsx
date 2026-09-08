@@ -19,11 +19,13 @@ import {
   Marque,
   MetriqueJour,
   Periode,
+  Profil,
   getActions,
   getCa,
   getCampagnes,
   getCreateurs,
   getCreations,
+  getProfils,
   getDemandes,
   getDocuments,
   getEtapes,
@@ -44,6 +46,7 @@ interface Donnees {
   campagnes: Campagne[];
   creations: Creation[];
   createurs: Createur[];
+  profils: Profil[];
   etapes: Etape[];
   metriques: MetriqueJour[];
   ca: CaJour[];
@@ -64,6 +67,7 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
     campagnes: [],
     creations: [],
     createurs: [],
+    profils: [],
     etapes: [],
     metriques: [],
     ca: [],
@@ -78,12 +82,13 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
   const [periode, setPeriode] = useState<Periode>(() => periodeGlissante(30));
 
   const recharger = useCallback(async () => {
-    const [marque, campagnes, creations, createurs, etapes, metriques, ca, actions, demandes, documents] =
+    const [marque, campagnes, creations, createurs, profils, etapes, metriques, ca, actions, demandes, documents] =
       await Promise.all([
         getMarque(),
         getCampagnes(),
         getCreations(),
         getCreateurs(),
+        getProfils(),
         getEtapes(),
         getMetriques(),
         getCa(),
@@ -91,7 +96,7 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
         getDemandes(),
         getDocuments(),
       ]);
-    setEtat({ marque, campagnes, creations, createurs, etapes, metriques, ca, actions, demandes, documents, chargement: false });
+    setEtat({ marque, campagnes, creations, createurs, profils, etapes, metriques, ca, actions, demandes, documents, chargement: false });
   }, []);
 
   useEffect(() => {

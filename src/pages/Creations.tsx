@@ -5,6 +5,7 @@ import { Panneau, Texte } from '../ui/Panneau';
 import { Creation, demanderRevision, validerCreation } from '../services/espaceClient';
 import { compact, dateLongue, nombre } from '../lib';
 import { Voir } from '../ui/Video';
+import { Profils } from '../ui/Profils';
 
 /**
  * Ce que les créateurs produisent pour la marque.
@@ -21,8 +22,9 @@ import { Voir } from '../ui/Video';
  * travail, pas sur le dossier.
  */
 export function Creations() {
-  const { creations, campagnes, createurs, chargement, recharger } = useDonnees();
+  const { creations, campagnes, createurs, profils, chargement, recharger } = useDonnees();
   const [aRevoir, setARevoir] = useState<Creation | null>(null);
+  const [choisir, setChoisir] = useState(false);
   const [enCours, setEnCours] = useState(false);
 
   const produitDe = useMemo(
@@ -33,6 +35,7 @@ export function Creations() {
   if (chargement) return <Vide>Chargement…</Vide>;
 
   const attente = creations.filter((c) => c.statut === 'a_valider');
+  const aChoisir = profils.filter((p) => p.choix === null);
   const suite = creations
     .filter((c) => c.statut !== 'a_valider')
     .sort((a, b) => (a.deposeLe < b.deposeLe ? 1 : -1));
@@ -53,6 +56,37 @@ export function Creations() {
         titre="Créations"
         sous="Chaque vidéo produite pour vous, et qui l'a faite."
       />
+
+      {/* La sélection passe devant tout : elle bloque le départ d'une
+          vague, et elle est la seule chose ici qui ait une échéance. */}
+      {profils.length > 0 && (
+        <Zone
+          titre={aChoisir.length > 0 ? 'Des profils vous attendent' : 'Votre sélection'}
+          compte={profils.length}
+          action={
+            <Bouton ton="accent" onClick={() => setChoisir(true)}>
+              {aChoisir.length > 0 ? 'Voir les profils' : 'Revoir ma sélection'}
+            </Bouton>
+          }
+        >
+          <p className="px-5 py-5 text-md leading-relaxed">
+            {aChoisir.length > 0 ? (
+              <>
+                On a présélectionné <strong>{profils.length} créateur{profils.length > 1 ? 's' : ''}</strong> pour
+                la vague {profils[0].campagne}.{' '}
+                {aChoisir.length === profils.length
+                  ? 'Vous les voyez un par un, vous gardez ceux qui vous vont.'
+                  : `Il vous en reste ${aChoisir.length} à trancher.`}
+              </>
+            ) : (
+              <>
+                Vos {profils.length} réponses sont enregistrées. Ouvrez la sélection pour l&apos;envoyer, ou
+                pour changer d&apos;avis avant.
+              </>
+            )}
+          </p>
+        </Zone>
+      )}
 
       <Zone titre="À valider" compte={attente.length}>
         {attente.length === 0 ? (
@@ -161,6 +195,10 @@ export function Creations() {
           </ul>
         )}
       </Zone>
+
+      {choisir && profils.length > 0 && (
+        <Profils profils={profils} onFermer={() => setChoisir(false)} onFait={recharger} />
+      )}
 
       {aRevoir && (
         <PanneauReprise
