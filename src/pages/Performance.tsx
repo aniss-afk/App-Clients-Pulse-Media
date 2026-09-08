@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useDonnees } from '../donnees';
-import { Case, Entete, Mesures, Rangee, Tableau, Vide, Zone } from '../ui/pieces';
+import { ChoixPeriode, Case, Entete, Mesures, Rangee, Tableau, Vide, Zone } from '../ui/pieces';
 import { GraphiqueDepenseCa, Legende } from '../ui/Graphique';
 import {
   NOM_PLATEFORME,
@@ -51,6 +51,7 @@ export function Performance() {
       <Entete
         titre="Performance"
         sous={`Du ${new Date(d.periode.debut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au ${new Date(d.periode.fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}.`}
+        actions={<ChoixPeriode />}
       />
 
       <Mesures

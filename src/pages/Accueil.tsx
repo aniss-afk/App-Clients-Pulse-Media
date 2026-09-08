@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDonnees } from '../donnees';
-import { Bouton, Entete, Mesures, Statut, Vide, Zone } from '../ui/pieces';
+import { ChoixPeriode, Bouton, Entete, Mesures, Statut, Vide, Zone } from '../ui/pieces';
 import { Panneau, Texte } from '../ui/Panneau';
 import { Carte } from '../ui/marque';
 import { GraphiqueDepenseCa, Legende } from '../ui/Graphique';
@@ -49,7 +49,12 @@ export function Accueil() {
       <Entete
         titre={`Bonjour, ${d.marque?.contact.split(' ')[0] ?? ''}`}
         sous={`${d.marque?.nom} · ${longueur} derniers jours.`}
-        actions={<Bouton ton="accent" onClick={() => setDemande(true)}>Demander quelque chose</Bouton>}
+        actions={
+          <>
+            <ChoixPeriode />
+            <Bouton ton="accent" onClick={() => setDemande(true)}>Demander quelque chose</Bouton>
+          </>
+        }
       />
 
       {/* La synthèse d'abord : trois phrases écrites depuis les chiffres

@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
 import { cn } from '../lib';
 import { Carte, Surligne } from './marque';
+import { useDonnees } from '../donnees';
+import { periodeGlissante } from '../services/espaceClient';
 
 /* ---------------- En-têtes ---------------- */
 
@@ -255,3 +257,36 @@ export function Statut({ valeur }: { valeur: string }) {
 }
 
 export const libelleStatut = (valeur: string) => STATUTS[valeur]?.texte ?? valeur;
+
+/**
+ * Le choix de la période, posé sur les écrans qui s'en servent.
+ *
+ * Il vivait dans la barre de navigation, où il occupait une place fixe
+ * pour un réglage utile sur deux pages seulement, et où on le cherchait
+ * quand on en avait besoin. Il est désormais là où on lit les chiffres
+ * qu'il gouverne.
+ */
+export function ChoixPeriode() {
+  const { periode, setPeriode } = useDonnees();
+  const longueur =
+    Math.round((new Date(periode.fin).getTime() - new Date(periode.debut).getTime()) / 86_400_000) + 1;
+
+  return (
+    <div className="inline-flex gap-1 p-1 rounded-pill bg-inset" role="group" aria-label="Période">
+      {[7, 30, 90].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => setPeriode(periodeGlissante(n))}
+          aria-pressed={longueur === n}
+          className={cn(
+            'px-3.5 py-1.5 rounded-pill text-sm font-medium transition-colors',
+            longueur === n ? 'bg-ink text-paper' : 'text-ink-muted hover:text-ink',
+          )}
+        >
+          {n} j
+        </button>
+      ))}
+    </div>
+  );
+}
