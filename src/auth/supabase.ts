@@ -110,3 +110,32 @@ export function messageErreur(brut: string): string {
   if (t.includes('rate limit') || t.includes('too many')) return 'Trop de tentatives. Réessayez dans quelques minutes.';
   return brut;
 }
+
+/* ---------------- Invitation ---------------- */
+
+export interface Invitation {
+  email: string;
+  marque: string;
+}
+
+async function invitation<T>(corps: Record<string, unknown>): Promise<T> {
+  const r = await fetch(`${URL}/functions/v1/inviter-client`, {
+    method: 'POST',
+    /* Aucune session ici, c'est tout l'objet du lien : le jeton fait
+       office d'authentification, d'où sa durée limitée et son usage
+       unique. La clé anonyme sert juste à franchir la passerelle. */
+    headers: { apikey: CLE, Authorization: `Bearer ${CLE}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(corps),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.erreur ?? `Erreur ${r.status}`);
+  return d as T;
+}
+
+/** À qui appartient ce lien, ou pourquoi il ne vaut plus rien. */
+export const verifierInvitation = (jeton: string) =>
+  invitation<Invitation>({ action: 'verifier', jeton });
+
+/** Le mot de passe choisi : le compte est créé et rattaché à la marque. */
+export const activerInvitation = (jeton: string, motDePasse: string) =>
+  invitation<{ ok: true; email: string }>({ action: 'activer', jeton, motDePasse });

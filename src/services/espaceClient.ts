@@ -26,6 +26,9 @@ export interface Marque {
   id: string;
   nom: string;
   contact: string;
+  email: string;
+  site: string;
+  telephone: string;
   secteur: string;
   depuis: string;
 }
@@ -552,4 +555,46 @@ export function serieJournaliere(metriques: MetriqueJour[], ca: CaJour[], period
 export function variation(actuel: number, avant: number): number | null {
   if (avant === 0) return null;
   return ((actuel - avant) / avant) * 100;
+}
+
+
+/* ------------------------------------------------------------------ */
+/* La fiche de la marque, tenue par la marque                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Corriger ses propres informations.
+ *
+ * Ce que l'agence a saisi en ouvrant le compte n'est pas gravé : un
+ * site change, un contact part. Ce qui relève de la relation
+ * commerciale, en revanche, ne bouge pas d'ici : le statut, le budget
+ * et la date d'entrée sont remis à leur valeur par la base, quoi qu'on
+ * envoie.
+ */
+export async function enregistrerMarque(saisie: {
+  nom: string;
+  contact: string;
+  site: string;
+  telephone: string;
+  secteur: string;
+}): Promise<void> {
+  const { supabase } = await import('../auth/supabase');
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Non connecté');
+
+  const { data: profil } = await supabase
+    .from('profiles').select('client_id').eq('id', session.user.id).maybeSingle();
+  if (!profil?.client_id) throw new Error('Aucune marque rattachée à ce compte.');
+
+  const { error } = await supabase
+    .from('clients')
+    .update({
+      nom: saisie.nom.trim(),
+      contact: saisie.contact.trim() || null,
+      site: saisie.site.trim() || null,
+      telephone: saisie.telephone.trim() || null,
+      secteur: saisie.secteur.trim() || null,
+    })
+    .eq('id', profil.client_id);
+  if (error) throw new Error(error.message);
 }

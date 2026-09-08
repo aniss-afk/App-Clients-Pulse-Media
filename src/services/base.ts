@@ -61,7 +61,7 @@ const teinte = (id: string) =>
 export async function marque(): Promise<Marque | null> {
   const { data } = await supabase
     .from('clients')
-    .select('id, nom, contact, secteur, depuis')
+    .select('id, nom, contact, email, site, telephone, secteur, depuis')
     .limit(1)
     .maybeSingle();
   if (!data) return null;
@@ -69,6 +69,9 @@ export async function marque(): Promise<Marque | null> {
     id: data.id,
     nom: data.nom ?? '',
     contact: data.contact ?? '',
+    email: data.email ?? '',
+    site: data.site ?? '',
+    telephone: data.telephone ?? '',
     secteur: data.secteur ?? '',
     depuis: jour(data.depuis),
   };

@@ -24,7 +24,7 @@ export function Entete({
   );
 }
 
-/** Une zone = un titre, un trait, une carte. Pas d'empilement de boîtes. */
+/** Une zone = un titre et une carte. Pas d'empilement de boîtes. */
 export function Zone({
   titre,
   compte,
