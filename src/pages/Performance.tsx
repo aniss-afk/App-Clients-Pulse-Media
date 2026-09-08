@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useDonnees } from '../donnees';
 import { ChoixPeriode, Case, Entete, Mesures, Rangee, Tableau, Vide, Zone } from '../ui/pieces';
-import { GraphiqueDepenseCa, Legende } from '../ui/Graphique';
+import { GraphiqueDepenseCa } from '../ui/Graphique';
 import {
   NOM_PLATEFORME,
   Plateforme,
@@ -78,9 +78,6 @@ export function Performance() {
       <Zone titre="Jour par jour">
         <div className="p-5 sm:p-6">
           <GraphiqueDepenseCa points={serie} hauteur={200} />
-          <div className="mt-3">
-            <Legende />
-          </div>
         </div>
       </Zone>
 

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { DonneesProvider, useDonnees } from '../donnees';
-import { GraphiqueDepenseCa, Legende } from '../ui/Graphique';
+import { GraphiqueDepenseCa } from '../ui/Graphique';
 import { Surligne } from '../ui/marque';
 import { Delta } from '../ui/pieces';
 import {
@@ -127,9 +127,6 @@ function Corps() {
           </div>
           <div className="mt-6">
             <GraphiqueDepenseCa points={serie} hauteur={180} />
-            <div className="mt-3">
-              <Legende />
-            </div>
           </div>
         </section>
 

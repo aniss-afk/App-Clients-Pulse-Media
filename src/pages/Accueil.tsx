@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom';
 import { useDonnees } from '../donnees';
 import { ChoixPeriode, Bouton, Entete, Mesures, Statut, Vide, Zone } from '../ui/pieces';
 import { Panneau, Texte } from '../ui/Panneau';
-import { Carte } from '../ui/marque';
-import { GraphiqueDepenseCa, Legende } from '../ui/Graphique';
-import { bilan, envoyerDemande, periodePrecedente, serieJournaliere, synthese, variation } from '../services/espaceClient';
+import { GraphiqueDepenseCa } from '../ui/Graphique';
+import { NOM_CANAL, bilan, envoyerDemande, periodePrecedente, serieJournaliere, variation } from '../services/espaceClient';
 import { dateLongue, euro, ratio } from '../lib';
 
 /**
@@ -26,29 +25,38 @@ export function Accueil() {
     () => serieJournaliere(d.metriques, d.ca, d.periode),
     [d.metriques, d.ca, d.periode],
   );
-  const phrases = useMemo(
-    () => synthese(actuel, avant, d.actions, d.etapes, d.periode),
-    [actuel, avant, d.actions, d.etapes, d.periode],
-  );
+  /* Le bandeau « En bref » disait en prose ce que la page dit déjà
+     trois fois : la première phrase reprenait les quatre chiffres qui
+     la suivent, la deuxième une ligne du journal, la troisième la
+     première ligne de « Ce qui arrive », juste en dessous. Deux
+     bandeaux pour un seul contenu. Les chiffres passent devant, et le
+     travail de l'agence a sa zone, qui mène au journal.
+
+     `synthese` reste au service : le rapport mensuel s'en sert, et
+     là-bas le lecteur n'a pas la page sous les yeux. */
   const [demande, setDemande] = useState(false);
 
   if (d.chargement) return <Vide>Chargement…</Vide>;
 
   const aValider = d.creations.filter((c) => c.statut === 'a_valider');
   const campagnesActives = d.campagnes.filter((c) => c.statut === 'active');
+  /* Les trois dernières actions, pas toute l'histoire : le journal
+     est à un clic et c'est lui qui la raconte. */
+  const recentes = [...d.actions].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 3);
   const prochaines = d.etapes
     .filter((e) => e.statut !== 'fait')
     .sort((a, b) => (a.date < b.date ? -1 : 1))
     .slice(0, 3);
 
-  const longueur =
-    Math.round((new Date(d.periode.fin).getTime() - new Date(d.periode.debut).getTime()) / 86_400_000) + 1;
 
   return (
     <>
       <Entete
         titre={`Bonjour, ${d.marque?.contact.split(' ')[0] ?? ''}`}
-        sous={`${d.marque?.nom} · ${longueur} derniers jours.`}
+        /* La longueur de la période est déjà sur le sélecteur, à
+           droite du même bandeau : la répéter ici faisait deux fois
+           « 30 jours » sur une ligne. */
+        sous={d.marque?.nom}
         actions={
           <>
             <ChoixPeriode />
@@ -56,17 +64,6 @@ export function Accueil() {
           </>
         }
       />
-
-      {/* La synthèse d'abord : trois phrases écrites depuis les chiffres
-          et le journal. Celui qui ne lit que ça a l'essentiel. */}
-      <Carte className="mb-5">
-        <p className="text-micro font-semibold uppercase text-ink-faint mb-3">En bref</p>
-        <ul className="space-y-2 text-md leading-relaxed">
-          {phrases.map((ph) => (
-            <li key={ph}>{ph}</li>
-          ))}
-        </ul>
-      </Carte>
 
       {aValider.length > 0 && (
         <Zone titre="On vous attend" compte={aValider.length}>
@@ -120,10 +117,42 @@ export function Accueil() {
       <Zone titre="Jour par jour">
         <div className="p-5 sm:p-6">
           <GraphiqueDepenseCa points={serie} hauteur={180} />
-          <div className="mt-3">
-            <Legende />
-          </div>
         </div>
+      </Zone>
+
+      <Zone
+        titre="Ce qu'on a fait"
+        compte={d.actions.length}
+        action={
+          d.actions.length > 3 ? (
+            <Link to="/journal" className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink transition-colors">
+              Tout le journal
+            </Link>
+          ) : undefined
+        }
+      >
+        {recentes.length === 0 ? (
+          <Vide>Rien à signaler sur la période.</Vide>
+        ) : (
+          <ul className="divide-y divide-line">
+            {recentes.map((a) => (
+              <li key={a.id} className="px-5 py-4 flex gap-5">
+                <span className="text-sm text-ink-faint w-[104px] shrink-0">
+                  <span className="block tabular-nums">
+                    {new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}
+                  </span>
+                  <span className="block text-xs font-medium text-ink-muted mt-0.5">{NOM_CANAL[a.canal]}</span>
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-base font-medium">{a.action}</span>
+                  {a.resultat && (
+                    <span className="block text-sm text-ink-muted mt-1 leading-relaxed">→ {a.resultat}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Zone>
 
       <Zone titre="Ce qui arrive" compte={prochaines.length}>
