@@ -24,6 +24,17 @@ export default {
         'red-pale': '#FFE9E6',
         'red-soft': '#FFD2CC',
 
+        /* --- Vert ---
+           La charte n'avait aucun moyen de dire « c'est bon » : le rouge
+           est un surligneur et une alerte, l'encre est neutre. Un seul
+           vert, réservé à ce qui est parti, reçu ou validé, jamais
+           décoratif. Les mêmes valeurs que les deux autres espaces :
+           trois chartes qui divergent sur un accusé de réception ne se
+           rejoignent plus. */
+        vert: '#17603F',
+        'vert-pale': '#E6F1E9',
+        'vert-soft': '#C9E2D3',
+
         line: 'rgba(18,17,15,0.08)',
         'line-strong': 'rgba(18,17,15,0.16)',
 
