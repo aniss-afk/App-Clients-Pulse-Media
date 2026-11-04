@@ -23,6 +23,7 @@ import { Profils } from '../ui/Profils';
  */
 export function Creations() {
   const { creations, campagnes, createurs, profils, chargement, recharger } = useDonnees();
+  const [erreur, setErreur] = useState('');
   const [aRevoir, setARevoir] = useState<Creation | null>(null);
   const [choisir, setChoisir] = useState(false);
   const [enCours, setEnCours] = useState(false);
@@ -42,9 +43,12 @@ export function Creations() {
 
   async function valider(id: string) {
     setEnCours(true);
+    setErreur('');
     try {
       await validerCreation(id);
       await recharger();
+    } catch {
+      setErreur('La validation n’a pas été enregistrée. Réessayez.');
     } finally {
       setEnCours(false);
     }
@@ -56,6 +60,8 @@ export function Creations() {
         titre="Créations"
         sous="Chaque vidéo produite pour vous, et qui l'a faite."
       />
+
+      {erreur && <p role="alert" className="mb-4 text-red-ink">{erreur}</p>}
 
       {/* La sélection passe devant tout : elle bloque le départ d'une
           vague, et elle est la seule chose ici qui ait une échéance. */}
@@ -236,6 +242,8 @@ function PanneauReprise({
       await demanderRevision(creation.id, motif.trim());
       await onFait();
       onFermer();
+    } catch {
+      setFaute('La demande de reprise n’a pas été enregistrée. Réessayez.');
     } finally {
       setEnCours(false);
     }

@@ -1,3 +1,7 @@
+import { NOM_CANAL } from '../services/espaceClient';
+import { dateCourte } from '../lib';
+import { AttributionBoutique } from '../ui/AttributionBoutique';
+import { messageBoutique } from '../services/etatBoutique';
 import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { DonneesProvider, useDonnees } from '../donnees';
@@ -45,6 +49,8 @@ function Corps() {
 
   if (d.chargement) return <p className="p-10 text-sm text-ink-faint">Chargement…</p>;
 
+  const etatBoutique = messageBoutique(d.boutiques, actuel, periode);
+  const actions = d.actions.filter((a) => a.date >= periode.debut && a.date <= periode.fin);
   const plateformes = Object.keys(actuel.depenseParPlateforme).sort() as Plateforme[];
 
   /* Les créations diffusées dans le mois, et ce qu'elles ont fait. */
@@ -75,7 +81,7 @@ function Corps() {
   }
   if (creations.length > 0) {
     lecture.push(
-      `${creations.length} vidéo${creations.length > 1 ? 's' : ''} mise${creations.length > 1 ? 's' : ''} en ligne, ${compact(vues)} vues, ${ventes} vente${ventes > 1 ? 's' : ''} attribuée${ventes > 1 ? 's' : ''} aux codes promo.`,
+      `${creations.length} vidéo${creations.length > 1 ? 's' : ''} mise${creations.length > 1 ? 's' : ''} en ligne, ${compact(vues)} vues.`,
     );
   }
 
@@ -110,9 +116,10 @@ function Corps() {
         </header>
 
         <section className="pt-8">
+          {etatBoutique && <p className="mb-3 text-sm text-ink-muted">{etatBoutique}</p>}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
-            <Chiffre label="Dépense publicitaire" valeur={euro(actuel.depense)} delta={variation(actuel.depense, avant.depense)} />
-            <Chiffre label="Chiffre d'affaires" valeur={euro(actuel.ca)} delta={variation(actuel.ca, avant.ca)} sous={`${nombre(actuel.commandes)} commandes`} />
+            <Chiffre label="Dépense publicitaire" valeur={actuel.joursPublicite ? euro(actuel.depense) : '—'} delta={actuel.joursPublicite ? variation(actuel.depense, avant.depense) : null} />
+            <Chiffre label="Chiffre d'affaires" valeur={actuel.joursBoutique ? euro(actuel.ca) : '—'} delta={actuel.joursBoutique ? variation(actuel.ca, avant.ca) : null} sous={actuel.joursBoutique ? `${nombre(actuel.commandes)} commandes` : undefined} />
             <Chiffre
               label="Retour sur dépense"
               valeur={ratio(actuel.mer)}
@@ -122,9 +129,10 @@ function Corps() {
             <Chiffre
               label="Coût par nouveau client"
               valeur={actuel.cpa !== null ? euro(actuel.cpa) : '—'}
-              sous={`${nombre(actuel.nouveauxClients)} nouveaux clients`}
+              sous={actuel.joursBoutique ? `${nombre(actuel.nouveauxClients)} nouveaux clients` : undefined}
             />
           </div>
+          <AttributionBoutique key={[d.marque?.id, periode.debut, periode.fin].join('/')} periode={periode} revenuMedia={actuel.joursPublicite ? actuel.revenuAttribue : null} />
           <div className="mt-6">
             <GraphiqueDepenseCa points={serie} hauteur={180} />
           </div>
@@ -144,7 +152,7 @@ function Corps() {
         <section className="pt-8">
           <Titre>Par canal</Titre>
           {plateformes.length === 0 ? (
-            <p className="text-sm text-ink-faint">Aucune dépense sur le mois.</p>
+            <p className="text-sm text-ink-faint">Aucune donnée publicitaire importée sur le mois.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -152,7 +160,8 @@ function Corps() {
                   <th className="py-2 font-semibold">Canal</th>
                   <th className="py-2 text-right font-semibold">Dépense</th>
                   <th className="py-2 text-right font-semibold">Part</th>
-                  <th className="py-2 text-right font-semibold">Retour déclaré</th>
+                  <th className="py-2 text-right font-semibold">Revenu déclaré</th>
+                  <th className="py-2 text-right font-semibold">ROAS déclaré</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -165,6 +174,7 @@ function Corps() {
                         ? `${Math.round((actuel.depenseParPlateforme[p] / actuel.depense) * 100)} %`
                         : '—'}
                     </td>
+                    <td className="py-2.5 text-right tabular-nums">{euro(actuel.revenuParPlateforme[p])}</td>
                     <td className="py-2.5 text-right tabular-nums">{ratio(actuel.roasParPlateforme[p])}</td>
                   </tr>
                 ))}
@@ -210,6 +220,17 @@ function Corps() {
               </tbody>
             </table>
           )}
+        </section>
+
+        <section className="pt-8">
+          <Titre>Journal de bord</Titre>
+          {actions.length ? <ul className="divide-y divide-line">
+            {actions.map((a) => <li key={a.id} className="py-2">
+              <p className="text-sm text-ink-muted">{dateCourte(a.date)} · {NOM_CANAL[a.canal]}</p>
+              <p className="font-medium">{a.action}</p><p className="text-sm">{a.raison}</p>
+              {a.resultat && <p className="text-sm">Résultat · {a.resultat}</p>}
+            </li>)}
+          </ul> : <p className="text-sm text-ink-muted">Aucune action consignée ce mois-ci.</p>}
         </section>
 
         <footer className="mt-12 pt-5 border-t border-line text-xs text-ink-faint flex justify-between">

@@ -4,13 +4,9 @@ L'espace que voit une marque accompagnée par l'agence : ses performances
 tous canaux confondus, les créations produites pour elle, la feuille de
 route et les rapports mensuels.
 
-## Ce que la marque ne voit pas
+## Données et accès
 
-Aucun objet servi par `src/services/espaceClient.ts` ne porte l'identité
-d'un créateur — ni son nom, ni son compte, ni son audience, ni ce qu'il
-touche. La frontière est tenue par le service, pas par l'interface : une
-colonne ajoutée par erreur dans un écran ne peut pas révéler ce qui n'est
-pas dans les données.
+Une session Supabase et un profil rattaché à la marque ouvrent le portail. Les écrans lisent les tables et fonctions de la base partagée avec l’agence. Une période sans import reste vide, une lecture en erreur peut être relancée. Les rapports utilisent ces mêmes données.
 
 ## Démarrer
 
@@ -18,12 +14,6 @@ pas dans les données.
 npm install
 npm run dev
 ```
-
-## État
-
-Données entièrement simulées, une seule marque, pas d'authentification.
-Les fonctions du service sont asynchrones exprès : le jour où la base
-répond à leur place, aucun écran ne change.
 
 ## Charte
 

@@ -1,3 +1,5 @@
+import { AttributionBoutique } from '../ui/AttributionBoutique';
+import { messageBoutique } from '../services/etatBoutique';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
@@ -54,12 +56,13 @@ export function Resultats() {
   /* Les mois où il s'est passé quelque chose, déduits des données
      plutôt que d'une liste écrite à la main qui finirait par diverger. */
   const rapports = useMemo(() => {
-    const mois = [...new Set(d.ca.map((c) => c.date.slice(0, 7)))].sort().reverse();
+    const mois = [...new Set([...d.ca, ...d.metriques, ...d.actions].map((c) => c.date.slice(0, 7)))].sort().reverse();
     return mois.map((m) => ({ mois: m, bilan: bilan(d.metriques, d.ca, periodeDuMois(m)) }));
-  }, [d.metriques, d.ca]);
+  }, [d.metriques, d.ca, d.actions]);
 
   if (d.chargement) return <Vide>Chargement…</Vide>;
 
+  const etatBoutique = messageBoutique(d.boutiques, actuel, d.periode);
   const aValider = d.creations.filter((c) => c.statut === 'a_valider');
   const campagnesActives = d.campagnes.filter((c) => c.statut === 'active');
   /* Les trois dernières actions, pas toute l'histoire : le journal
@@ -129,19 +132,20 @@ export function Resultats() {
       )}
 
       <section className="mb-5">
+        {etatBoutique && <p role="status" className="mb-3 text-sm text-ink-muted">{etatBoutique}</p>}
         <Mesures
           items={[
             {
               label: "Chiffre d'affaires",
-              valeur: euro(actuel.ca),
-              delta: variation(actuel.ca, avant.ca),
-              sous: `${actuel.commandes} commandes`,
+              valeur: actuel.joursBoutique ? euro(actuel.ca) : '—',
+              delta: actuel.joursBoutique ? variation(actuel.ca, avant.ca) : null,
+              sous: actuel.joursBoutique ? `${actuel.commandes} commandes` : undefined,
               fort: true,
             },
             {
               label: 'Dépense publicitaire',
-              valeur: euro(actuel.depense),
-              delta: variation(actuel.depense, avant.depense),
+              valeur: actuel.joursPublicite ? euro(actuel.depense) : '—',
+              delta: actuel.joursPublicite ? variation(actuel.depense, avant.depense) : null,
             },
             {
               label: 'Retour sur dépense',
@@ -152,10 +156,11 @@ export function Resultats() {
             {
               label: 'Coût par nouveau client',
               valeur: actuel.cpa !== null ? euro(actuel.cpa) : '—',
-              sous: `${actuel.nouveauxClients} nouveaux clients`,
+              sous: actuel.joursBoutique ? `${actuel.nouveauxClients} nouveaux clients` : undefined,
             },
           ]}
         />
+        <AttributionBoutique key={[d.marque?.id, d.periode.debut, d.periode.fin].join('/')} periode={d.periode} revenuMedia={actuel.joursPublicite ? actuel.revenuAttribue : null} />
       </section>
 
       <Zone titre="Jour par jour">
@@ -166,10 +171,10 @@ export function Resultats() {
 
       <Zone titre="Par canal" compte={plateformes.length}>
         {plateformes.length === 0 ? (
-          <Vide>Aucune dépense sur la période.</Vide>
+          <Vide>Aucune donnée publicitaire importée sur la période.</Vide>
         ) : (
           <>
-            <Tableau colonnes={['Canal', 'Dépense', 'Part', 'Retour déclaré']}>
+            <Tableau colonnes={['Canal', 'Dépense', 'Part', 'Revenu déclaré', 'ROAS déclaré']}>
               {plateformes.map((pf) => (
                 <Rangee key={pf}>
                   <Case>{NOM_PLATEFORME[pf] ?? pf}</Case>
@@ -179,6 +184,7 @@ export function Resultats() {
                       ? `${Math.round((actuel.depenseParPlateforme[pf] / actuel.depense) * 100)} %`
                       : '—'}
                   </Case>
+                  <Case mono aDroite>{euro(actuel.revenuParPlateforme[pf])}</Case>
                   <Case mono aDroite>{ratio(actuel.roasParPlateforme[pf])}</Case>
                 </Rangee>
               ))}
@@ -321,8 +327,8 @@ export function Resultats() {
                     <span className="text-[11px] text-ink-faint ml-2">en cours</span>
                   )}
                 </Case>
-                <Case mono aDroite>{euro(l.bilan.depense)}</Case>
-                <Case mono aDroite>{euro(l.bilan.ca)}</Case>
+                <Case mono aDroite>{l.bilan.joursPublicite ? euro(l.bilan.depense) : '—'}</Case>
+                <Case mono aDroite>{l.bilan.joursBoutique ? euro(l.bilan.ca) : '—'}</Case>
                 <Case mono aDroite>{ratio(l.bilan.mer)}</Case>
                 <Case aDroite>
                   <Link
@@ -358,6 +364,8 @@ function PanneauDemande({ onFermer, onFait }: { onFermer: () => void; onFait: ()
       await envoyerDemande(texte.trim());
       await onFait();
       onFermer();
+    } catch {
+      setFaute('Votre demande n’a pas été enregistrée. Réessayez.');
     } finally {
       setEnCours(false);
     }

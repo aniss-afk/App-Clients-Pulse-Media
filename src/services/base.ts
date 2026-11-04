@@ -35,19 +35,17 @@ import type {
  * engagés sans jamais les nommer.
  */
 
-/**
- * Vrai quand on lit la base plutôt que la démonstration.
- *
- * L'espace ne s'ouvre plus sans session ni sans rattachement à une
- * marque : à partir de là, montrer les chiffres d'une autre marque
- * serait pire que de ne rien montrer. Le réel est donc la règle, et
- * `VITE_DONNEES_REELLES=false` la seule façon de repasser en
- * démonstration — pour une capture d'écran ou une présentation.
- */
-export async function branchee(): Promise<boolean> {
-  if (import.meta.env.VITE_DONNEES_REELLES === 'false') return false;
-  const { data: { session } } = await supabase.auth.getSession();
-  return Boolean(session);
+export interface ConnexionBoutique {
+  plateforme: 'shopify' | 'woocommerce';
+  statut: 'connecte' | 'a_reconnecter' | 'jamais';
+  derniere_sync: string | null;
+  en_echec: boolean;
+}
+
+export async function connexionsBoutique(): Promise<ConnexionBoutique[]> {
+  const { data, error } = await supabase.rpc('etat_boutiques_marque');
+  if (error) throw error;
+  return data ?? [];
 }
 
 const jour = (v: string | null) => (v ?? '').slice(0, 10);
@@ -61,11 +59,12 @@ const teinte = (id: string) =>
   TEINTES[[...id].reduce((n, c) => n + c.charCodeAt(0), 0) % TEINTES.length];
 
 export async function marque(): Promise<Marque | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('clients')
     .select('id, nom, contact, email, site, telephone, secteur, depuis')
     .limit(1)
     .maybeSingle();
+  if (error) throw error;
   if (!data) return null;
   return {
     id: data.id,
@@ -79,9 +78,10 @@ export async function marque(): Promise<Marque | null> {
   };
 }
 
-export async function campagnes(): Promise<Campagne[] | null> {
+export async function campagnes(): Promise<Campagne[]> {
   const { data, error } = await supabase.rpc('campagnes_marque');
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return (data as Record<string, unknown>[]).map((c) => ({
     id: String(c.id),
     produit: String(c.produit ?? ''),
@@ -95,13 +95,14 @@ export async function campagnes(): Promise<Campagne[] | null> {
   }));
 }
 
-export async function creations(): Promise<Creation[] | null> {
+export async function creations(): Promise<Creation[]> {
   /* Une fonction et non la vue `contenus_marque` : le prénom et le
      compte du créateur vivent dans `creators`, sur laquelle la marque
      n'a aucune politique de lecture. Une vue en `security_invoker` y
      perdrait les lignes ; la fonction porte le filtre par marque. */
   const { data, error } = await supabase.rpc('creations_marque');
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return (data as Record<string, any>[]).map((c) => ({
     id: c.id,
     campagneId: c.campaign_id,
@@ -130,9 +131,10 @@ export async function creations(): Promise<Creation[] | null> {
   }));
 }
 
-export async function createurs(): Promise<Createur[] | null> {
+export async function createurs(): Promise<Createur[]> {
   const { data, error } = await supabase.rpc('createurs_marque');
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return (data as Record<string, any>[]).map((c) => ({
     id: String(c.creator_id),
     prenom: String(c.prenom ?? ''),
@@ -147,12 +149,13 @@ export async function createurs(): Promise<Createur[] | null> {
   }));
 }
 
-export async function etapes(): Promise<Etape[] | null> {
+export async function etapes(): Promise<Etape[]> {
   const { data, error } = await supabase
     .from('etapes_roadmap')
     .select('id, campaign_id, date, titre, detail, statut')
     .order('date');
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return data.map((e) => ({
     id: e.id,
     campagneId: e.campaign_id,
@@ -163,12 +166,13 @@ export async function etapes(): Promise<Etape[] | null> {
   }));
 }
 
-export async function metriques(): Promise<MetriqueJour[] | null> {
+export async function metriques(): Promise<MetriqueJour[]> {
   const { data, error } = await supabase
     .from('metriques_jour')
     .select('plateforme, date, depense, impressions, clics, conversions, revenu_attribue')
     .order('date');
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return data.map((m) => ({
     plateforme: (m.plateforme as Plateforme) ?? 'meta',
     date: jour(m.date),
@@ -180,12 +184,13 @@ export async function metriques(): Promise<MetriqueJour[] | null> {
   }));
 }
 
-export async function ca(): Promise<CaJour[] | null> {
+export async function ca(): Promise<CaJour[]> {
   const { data, error } = await supabase
     .from('ca_jour')
     .select('date, ca, commandes, nouveaux_clients')
     .order('date');
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return data.map((c) => ({
     date: jour(c.date),
     ca: num(c.ca),
@@ -194,12 +199,13 @@ export async function ca(): Promise<CaJour[] | null> {
   }));
 }
 
-export async function actions(): Promise<ActionAgence[] | null> {
+export async function actions(): Promise<ActionAgence[]> {
   const { data, error } = await supabase
     .from('actions_agence')
     .select('id, date, canal, action, raison, resultat')
     .order('date', { ascending: false });
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return data.map((a) => ({
     id: a.id,
     date: jour(a.date),
@@ -210,12 +216,13 @@ export async function actions(): Promise<ActionAgence[] | null> {
   }));
 }
 
-export async function demandes(): Promise<Demande[] | null> {
+export async function demandes(): Promise<Demande[]> {
   const { data, error } = await supabase
     .from('demandes')
     .select('id, texte, statut, reponse, cree_le')
     .order('cree_le', { ascending: false });
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return data.map((d) => ({
     id: d.id,
     date: jour(d.cree_le),
@@ -225,12 +232,13 @@ export async function demandes(): Promise<Demande[] | null> {
   }));
 }
 
-export async function documents(): Promise<Document[] | null> {
+export async function documents(): Promise<Document[]> {
   const { data, error } = await supabase
     .from('documents')
     .select('id, nom, type, date, fichier')
     .order('date', { ascending: false });
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return data.map((d) => ({
     id: d.id,
     nom: d.nom ?? '',
@@ -243,38 +251,33 @@ export async function documents(): Promise<Document[] | null> {
 /* ---------------- Écritures ---------------- */
 
 /** Valider, c'est autoriser la diffusion. Rien d'autre ne se passe ici. */
-export async function validerCreation(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('creator_contents')
-    .update({ statut_marque: 'validee', motif_marque: null })
-    .eq('id', id);
-  return !error;
+export async function validerCreation(id: string): Promise<void> {
+  const { error } = await supabase.rpc('decider_creation_marque', { p_contenu: id, p_valider: true });
+  if (error) throw error;
 }
 
-export async function demanderRevision(id: string, motif: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('creator_contents')
-    .update({ statut_marque: 'a_revoir', motif_marque: motif })
-    .eq('id', id);
-  return !error;
+export async function demanderRevision(id: string, motif: string): Promise<void> {
+  const { error } = await supabase.rpc('decider_creation_marque', { p_contenu: id, p_valider: false, p_motif: motif });
+  if (error) throw error;
 }
 
-export async function envoyerDemande(texte: string): Promise<Demande | null> {
+export async function envoyerDemande(texte: string): Promise<Demande> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
+  if (!session) throw new Error('Votre session a expiré.');
   const { data: profil } = await supabase
     .from('profiles')
     .select('client_id')
     .eq('id', session.user.id)
     .maybeSingle();
-  if (!profil?.client_id) return null;
+  if (!profil?.client_id) throw new Error('Aucune marque rattachée à ce compte.');
 
   const { data, error } = await supabase
     .from('demandes')
     .insert({ client_id: profil.client_id, texte, statut: 'envoyee' })
     .select('id, texte, statut, reponse, cree_le')
     .single();
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) throw new Error('La demande n’a pas été enregistrée.');
   return {
     id: data.id,
     date: jour(data.cree_le),
@@ -288,9 +291,10 @@ export async function envoyerDemande(texte: string): Promise<Demande | null> {
 /* La sélection des créateurs                                          */
 /* ------------------------------------------------------------------ */
 
-export async function profils(): Promise<Profil[] | null> {
+export async function profils(): Promise<Profil[]> {
   const { data, error } = await supabase.rpc('selection_marque');
-  if (error || !data) return null;
+  if (error) throw error;
+  if (!data) return [];
   return (data as Record<string, any>[]).map((r) => ({
     participationId: String(r.participation_id),
     campagneId: String(r.campaign_id),
@@ -310,7 +314,7 @@ export async function profils(): Promise<Profil[] | null> {
   }));
 }
 
-export async function trancherProfil(participationId: string, retenu: boolean, avis: string | null): Promise<void> {
+export async function trancherProfil(participationId: string, retenu: boolean, avis: string | null = null): Promise<void> {
   const { error } = await supabase.rpc('trancher_profil', {
     p_participation: participationId,
     p_retenu: retenu,
