@@ -141,13 +141,16 @@ export interface Periode {
   fin: string;
 }
 
-export type Canal = Plateforme | 'createurs' | 'boutique' | 'compte';
+export type Canal = Plateforme | 'createurs' | 'boutique' | 'compte' | 'seo' | 'email' | 'analytics';
 
 export const NOM_CANAL: Record<Canal, string> = {
   ...NOM_PLATEFORME,
   createurs: 'Créateurs',
   boutique: 'Boutique',
   compte: 'Compte',
+  seo: 'SEO',
+  email: 'E-mail',
+  analytics: 'Analyse du site',
 };
 
 /**
@@ -268,6 +271,13 @@ export function periodeGlissante(jours: number, fin = new Date()): Periode {
   const debut = new Date(fin);
   debut.setDate(debut.getDate() - (jours - 1));
   return { debut: jourISO(debut), fin: jourISO(fin) };
+}
+
+/** Le reporting financier porte sur des journées terminées. */
+export function periodeComplete(jours: number, maintenant = new Date()): Periode {
+  const hier = new Date(maintenant);
+  hier.setDate(hier.getDate() - 1);
+  return periodeGlissante(jours, hier);
 }
 
 export function periodePrecedente(p: Periode): Periode {

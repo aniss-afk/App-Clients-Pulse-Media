@@ -33,7 +33,7 @@ import {
   getMarque,
   connexionsBoutique,
   getMetriques,
-  periodeGlissante,
+  periodeComplete,
 } from './services/espaceClient';
 
 /**
@@ -83,7 +83,7 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
 
   /* 30 jours par défaut : assez long pour lisser les week-ends, assez
      court pour que la tendance récente ne soit pas noyée. */
-  const [periode, setPeriode] = useState<Periode>(() => periodeGlissante(30));
+  const [periode, setPeriode] = useState<Periode>(() => periodeComplete(30));
 
   const [erreur, setErreur] = useState(false);
   const recharger = useCallback(async () => {
