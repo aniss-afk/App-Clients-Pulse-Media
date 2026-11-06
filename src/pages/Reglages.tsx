@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { supabase } from '../auth/supabase';
 import { Check, Loader2 } from 'lucide-react';
 import { Entete, Zone } from '../ui/pieces';
 import { useDonnees } from '../donnees';
@@ -59,6 +60,8 @@ export function Reglages() {
   return (
     <div className="animate-rise">
       <Entete titre="Réglages" sous="Tes informations, telles qu'on les a. Corrige ce qui a changé." />
+
+      <BoutiqueShopify />
 
       <Zone titre="Ta marque">
         <form onSubmit={envoyer} className="flex flex-col gap-3 max-w-[440px]">
@@ -137,5 +140,62 @@ export function Reglages() {
         )}
       </Zone>
     </div>
+  );
+}
+
+function BoutiqueShopify() {
+  const { boutiques, recharger } = useDonnees();
+  const [shop, setShop] = useState('');
+  const [erreur, setErreur] = useState('');
+  const [enCours, setEnCours] = useState(false);
+  const [lien, setLien] = useState('');
+  useEffect(() => {
+    if (!lien) return;
+    const retour = () => { void recharger(); };
+    window.addEventListener('focus', retour);
+    return () => window.removeEventListener('focus', retour);
+  }, [lien, recharger]);
+
+  async function connecter(e: FormEvent) {
+    e.preventDefault();
+    setErreur('');
+    setLien('');
+    setEnCours(true);
+    try {
+      const { data, error } = await supabase.functions.invoke<{ authUrl: string }>('shopify-auth', {
+        body: { shop: shop.trim() },
+      });
+      if (error) {
+        const corps = await (error.context as Response | undefined)?.json?.().catch(() => null);
+        throw new Error(corps?.error || 'Impossible de préparer la connexion Shopify.');
+      }
+      if (!data?.authUrl) throw new Error('Lien de connexion indisponible.');
+      setLien(data.authUrl);
+    } catch (e) {
+      setErreur((e as Error).message);
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  const boutique = boutiques.find((c) => c.plateforme === 'shopify');
+  return (
+    <Zone titre="Boutique Shopify">
+      <p className="mb-3 text-sm text-ink-muted">
+        {boutique?.statut === 'connecte' ? 'Boutique connectée.' : 'Reliez votre boutique pour importer les ventes.'}
+      </p>
+      <form onSubmit={connecter} className="flex max-w-[440px] flex-col items-start gap-3">
+        <label className="w-full text-sm font-semibold">Domaine Shopify
+          <input required value={shop} onChange={(e) => { setShop(e.target.value); setLien(''); }}
+            placeholder="ma-boutique.myshopify.com" className={champ} />
+        </label>
+        {erreur && <p role="alert" className="text-sm text-red-ink">{erreur}</p>}
+        {lien ? <a href={lien} target="_blank" rel="noopener noreferrer" className="font-medium underline">
+          Autoriser dans Shopify ↗
+        </a> : <button type="submit" disabled={enCours} className="rounded-pill bg-ink px-5 py-2 text-paper disabled:opacity-50">
+          {enCours ? 'Préparation…' : 'Connecter Shopify'}
+        </button>}
+      </form>
+    </Zone>
   );
 }

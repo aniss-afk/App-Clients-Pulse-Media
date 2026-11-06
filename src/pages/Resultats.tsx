@@ -1,22 +1,18 @@
+import { CanauxBoutique } from '../ui/pilotage/CanauxBoutique';
+import { PilotageBoutique } from '../ui/pilotage/PilotageBoutique';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { useDonnees } from '../donnees';
-import { Case, ChoixPeriode, Bouton, Entete, Mesures, Rangee, Statut, Tableau, Vide, Zone } from '../ui/pieces';
+import { Case, ChoixPeriode, Bouton, Entete, Rangee, Statut, Tableau, Vide, Zone } from '../ui/pieces';
 import { Panneau, Texte } from '../ui/Panneau';
-import { GraphiqueDepenseCa } from '../ui/Graphique';
 import {
   NOM_CANAL,
-  NOM_PLATEFORME,
-  Plateforme,
   bilan,
   envoyerDemande,
   periodeDuMois,
-  periodePrecedente,
-  serieJournaliere,
-  variation,
 } from '../services/espaceClient';
-import { dateLongue, euro, mois as libelleMois, nombre, ratio } from '../lib';
+import { dateLongue, euro, mois as libelleMois, ratio } from '../lib';
 
 /**
  * Ce que ça rapporte.
@@ -32,15 +28,6 @@ import { dateLongue, euro, mois as libelleMois, nombre, ratio } from '../lib';
 export function Resultats() {
   const d = useDonnees();
 
-  const actuel = useMemo(() => bilan(d.metriques, d.ca, d.periode), [d.metriques, d.ca, d.periode]);
-  const avant = useMemo(
-    () => bilan(d.metriques, d.ca, periodePrecedente(d.periode)),
-    [d.metriques, d.ca, d.periode],
-  );
-  const serie = useMemo(
-    () => serieJournaliere(d.metriques, d.ca, d.periode),
-    [d.metriques, d.ca, d.periode],
-  );
   /* Le bandeau « En bref » disait en prose ce que la page dit déjà
      trois fois : la première phrase reprenait les quatre chiffres qui
      la suivent, la deuxième une ligne du journal, la troisième la
@@ -54,9 +41,13 @@ export function Resultats() {
   /* Les mois où il s'est passé quelque chose, déduits des données
      plutôt que d'une liste écrite à la main qui finirait par diverger. */
   const rapports = useMemo(() => {
-    const mois = [...new Set(d.ca.map((c) => c.date.slice(0, 7)))].sort().reverse();
-    return mois.map((m) => ({ mois: m, bilan: bilan(d.metriques, d.ca, periodeDuMois(m)) }));
-  }, [d.metriques, d.ca]);
+    const mois = [...new Set([...d.ca, ...d.metriques, ...d.actions].map((c) => c.date.slice(0, 7)))].sort().reverse();
+    return mois.map((m) => {
+      const periode = periodeDuMois(m);
+      const jours = Math.round((Date.parse(periode.fin) - Date.parse(periode.debut)) / 86400000) + 1;
+      return { mois: m, jours, bilan: bilan(d.metriques, d.ca, periode) };
+    });
+  }, [d.metriques, d.ca, d.actions]);
 
   if (d.chargement) return <Vide>Chargement…</Vide>;
 
@@ -64,16 +55,9 @@ export function Resultats() {
   const campagnesActives = d.campagnes.filter((c) => c.statut === 'active');
   /* Les trois dernières actions, pas toute l'histoire : le journal
      est à un clic et c'est lui qui la raconte. */
-  const recentes = [...d.actions].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 3);
+  const actionsPeriode = d.actions.filter(a => a.date >= d.periode.debut && a.date <= d.periode.fin);
+  const recentes = [...actionsPeriode].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 3);
 
-  /* Ce que la page « Performance » disait en plus, et qui n'était que
-     le dépliage de ces mêmes quatre chiffres : où part la dépense, ce
-     que chaque plateforme s'attribue, et le trafic acheté. */
-  const plateformes = Object.keys(actuel.depenseParPlateforme).sort() as Plateforme[];
-  const surAttribution = actuel.ca > 0 ? (actuel.revenuAttribue / actuel.ca) * 100 : null;
-  const dansPeriode = d.metriques.filter((m) => m.date >= d.periode.debut && m.date <= d.periode.fin);
-  const impressions = dansPeriode.reduce((sm, m) => sm + m.impressions, 0);
-  const clics = dansPeriode.reduce((sm, m) => sm + m.clics, 0);
   const prochaines = d.etapes
     .filter((e) => e.statut !== 'fait')
     .sort((a, b) => (a.date < b.date ? -1 : 1))
@@ -83,11 +67,8 @@ export function Resultats() {
   return (
     <>
       <Entete
-        titre={`Bonjour, ${d.marque?.contact.split(' ')[0] ?? ''}`}
-        /* Ni le nom de la marque ni la longueur de la période : elle
-           sait chez qui elle est, et le sélecteur à droite dit déjà
-           « 30 j ». Un sous-titre qui ne raconte rien vaut moins que
-           pas de sous-titre. */
+        titre="Vue d’ensemble"
+        sous={`${dateLongue(d.periode.debut)} — ${dateLongue(d.periode.fin)}`}
         actions={
           <>
             <ChoixPeriode />
@@ -128,92 +109,15 @@ export function Resultats() {
         </Zone>
       )}
 
-      <section className="mb-5">
-        <Mesures
-          items={[
-            {
-              label: "Chiffre d'affaires",
-              valeur: euro(actuel.ca),
-              delta: variation(actuel.ca, avant.ca),
-              sous: `${actuel.commandes} commandes`,
-              fort: true,
-            },
-            {
-              label: 'Dépense publicitaire',
-              valeur: euro(actuel.depense),
-              delta: variation(actuel.depense, avant.depense),
-            },
-            {
-              label: 'Retour sur dépense',
-              valeur: ratio(actuel.mer),
-              delta: actuel.mer !== null && avant.mer !== null ? variation(actuel.mer, avant.mer) : null,
-              sous: 'CA ÷ dépense',
-            },
-            {
-              label: 'Coût par nouveau client',
-              valeur: actuel.cpa !== null ? euro(actuel.cpa) : '—',
-              sous: `${actuel.nouveauxClients} nouveaux clients`,
-            },
-          ]}
-        />
-      </section>
+      <PilotageBoutique />
+      <CanauxBoutique />
 
-      <Zone titre="Jour par jour">
-        <div className="p-5 sm:p-6">
-          <GraphiqueDepenseCa points={serie} hauteur={180} />
-        </div>
-      </Zone>
-
-      <Zone titre="Par canal" compte={plateformes.length}>
-        {plateformes.length === 0 ? (
-          <Vide>Aucune dépense sur la période.</Vide>
-        ) : (
-          <>
-            <Tableau colonnes={['Canal', 'Dépense', 'Part', 'Retour déclaré']}>
-              {plateformes.map((pf) => (
-                <Rangee key={pf}>
-                  <Case>{NOM_PLATEFORME[pf] ?? pf}</Case>
-                  <Case mono aDroite>{euro(actuel.depenseParPlateforme[pf])}</Case>
-                  <Case mono aDroite>
-                    {actuel.depense > 0
-                      ? `${Math.round((actuel.depenseParPlateforme[pf] / actuel.depense) * 100)} %`
-                      : '—'}
-                  </Case>
-                  <Case mono aDroite>{ratio(actuel.roasParPlateforme[pf])}</Case>
-                </Rangee>
-              ))}
-            </Tableau>
-            {surAttribution !== null && (
-              <p className="px-5 pb-5 pt-3 text-sm text-ink-muted leading-relaxed">
-                Mises bout à bout, les plateformes s&apos;attribuent{' '}
-                <strong className="text-ink">{euro(actuel.revenuAttribue)}</strong> de revenu, soit{' '}
-                <strong className="text-ink">{Math.round(surAttribution)} %</strong> de votre chiffre
-                d&apos;affaires réel de {euro(actuel.ca)}. Chacune compte les mêmes ventes : c&apos;est
-                normal, et c&apos;est pour ça qu&apos;on ne les additionne pas. Le retour sur dépense
-                plus haut, calculé sur la boutique, est le chiffre à suivre.
-              </p>
-            )}
-            <div className="grid gap-px bg-line sm:grid-cols-3 border-t border-line">
-              {[
-                { label: 'Impressions', valeur: nombre(impressions) },
-                { label: 'Clics', valeur: nombre(clics) },
-                { label: 'Coût par clic', valeur: clics > 0 ? euro(actuel.depense / clics) : '—' },
-              ].map((m) => (
-                <div key={m.label} className="bg-paper px-5 py-4">
-                  <p className="text-sm font-medium text-ink-muted">{m.label}</p>
-                  <p className="text-lg font-bold tracking-[-0.02em] tabular-nums mt-1.5">{m.valeur}</p>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </Zone>
-
+      <details className="mt-5"><summary className="cursor-pointer text-sm font-medium py-3">Suivi et rapports</summary><div className="pt-3">
       <Zone
         titre="Ce qu'on a fait"
-        compte={d.actions.length}
+        compte={actionsPeriode.length}
         action={
-          d.actions.length > 3 ? (
+          actionsPeriode.length > 3 ? (
             <Link to="/suivi" className="text-sm text-ink-muted underline underline-offset-4 hover:text-ink transition-colors">
               Tout le suivi
             </Link>
@@ -299,7 +203,7 @@ export function Resultats() {
                 <div className="mt-2.5 h-1.5 rounded-pill bg-inset overflow-hidden">
                   <span
                     className="block h-full bg-red rounded-pill"
-                    style={{ width: `${Math.min(100, (c.videosLivrees / c.videosAttendues) * 100)}%` }}
+                    style={{ width: `${c.videosAttendues > 0 ? Math.min(100, (c.videosLivrees / c.videosAttendues) * 100) : 0}%` }}
                   />
                 </div>
               </li>
@@ -312,18 +216,18 @@ export function Resultats() {
         {rapports.length === 0 ? (
           <Vide>Aucun rapport disponible.</Vide>
         ) : (
-          <Tableau colonnes={['Mois', 'Dépense', "Chiffre d'affaires", 'Retour', '']}>
+          <Tableau colonnes={['Mois', 'Dépense', "Encaissements boutique", 'Retour', '']}>
             {rapports.map((l) => (
               <Rangee key={l.mois}>
                 <Case>
                   <span className="font-medium">{libelleMois(l.mois)}</span>
-                  {l.mois === d.periode.fin.slice(0, 7) && (
+                  {l.mois === new Date().toISOString().slice(0, 7) && (
                     <span className="text-[11px] text-ink-faint ml-2">en cours</span>
                   )}
                 </Case>
-                <Case mono aDroite>{euro(l.bilan.depense)}</Case>
-                <Case mono aDroite>{euro(l.bilan.ca)}</Case>
-                <Case mono aDroite>{ratio(l.bilan.mer)}</Case>
+                <Case mono aDroite>{l.bilan.joursPublicite ? <>{euro(l.bilan.depense)}{l.bilan.joursPublicite < l.jours && <small className="block text-xs text-ink-muted">partiel</small>}</> : '—'}</Case>
+                <Case mono aDroite>{l.bilan.joursBoutique ? <>{euro(l.bilan.ca)}{l.bilan.joursBoutique < l.jours && <small className="block text-xs text-ink-muted">partiel</small>}</> : '—'}</Case>
+                <Case mono aDroite>{l.bilan.joursBoutique === l.jours && l.bilan.joursPublicite === l.jours ? ratio(l.bilan.mer) : '—'}</Case>
                 <Case aDroite>
                   <Link
                     to={`/rapports/${l.mois}`}
@@ -337,6 +241,8 @@ export function Resultats() {
           </Tableau>
         )}
       </Zone>
+
+      </div></details>
 
       {demande && <PanneauDemande onFermer={() => setDemande(false)} onFait={d.recharger} />}
     </>
@@ -358,6 +264,8 @@ function PanneauDemande({ onFermer, onFait }: { onFermer: () => void; onFait: ()
       await envoyerDemande(texte.trim());
       await onFait();
       onFermer();
+    } catch {
+      setFaute('Votre demande n’a pas été enregistrée. Réessayez.');
     } finally {
       setEnCours(false);
     }

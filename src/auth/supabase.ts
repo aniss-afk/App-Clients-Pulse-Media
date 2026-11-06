@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { configurationDemoLocale } from '../demoLocal';
+
+const demoLocale = configurationDemoLocale(import.meta.env);
 
 /**
  * Le client Supabase de l'espace marque.
@@ -10,9 +13,9 @@ import { createClient } from '@supabase/supabase-js';
  * conception, et une requête faite depuis la console du navigateur ne
  * rapporte rien de plus que l'application.
  */
-const URL = import.meta.env.VITE_SUPABASE_URL ?? 'https://cnyjtqbjzzgblmxqcbzw.supabase.co';
+const URL = demoLocale?.url ?? import.meta.env.VITE_SUPABASE_URL ?? 'https://cnyjtqbjzzgblmxqcbzw.supabase.co';
 const CLE =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ??
+  demoLocale?.cle ?? import.meta.env.VITE_SUPABASE_ANON_KEY ??
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNueWp0cWJqenpnYmxteHFjYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzODExNzEsImV4cCI6MjEwMzk1NzE3MX0.HyI9zHRWAIz0mR12B3-H2jhOCEhafSzYMQfwaGAWlMQ';
 
 /**
@@ -27,7 +30,7 @@ export const supabase = createClient(URL, CLE, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    storageKey: 'pulse-marque',
+    storageKey: demoLocale ? 'pulse-marque-demo' : 'pulse-marque',
   },
 });
 
@@ -43,7 +46,7 @@ export async function deconnecter(): Promise<void> {
     await supabase.auth.signOut({ scope: 'local' });
   } catch {
     try {
-      window.localStorage.removeItem('pulse-marque');
+      window.localStorage.removeItem(demoLocale ? 'pulse-marque-demo' : 'pulse-marque');
     } catch {
       /* Stockage bloqué : il n'y avait rien à vider. */
     }

@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { cn } from '../lib';
 import { Carte, Surligne } from './marque';
 import { useDonnees } from '../donnees';
-import { periodeGlissante } from '../services/espaceClient';
+import { periodeComplete } from '../services/espaceClient';
 
 /* ---------------- En-têtes ---------------- */
 
@@ -272,12 +272,12 @@ export function ChoixPeriode() {
     Math.round((new Date(periode.fin).getTime() - new Date(periode.debut).getTime()) / 86_400_000) + 1;
 
   return (
-    <div className="inline-flex gap-1 p-1 rounded-pill bg-inset" role="group" aria-label="Période">
+    <div className="inline-flex gap-1 p-1 rounded-pill bg-inset" role="group" aria-label="Période" title={`${periode.debut} au ${periode.fin} · journées terminées`}>
       {[7, 30, 90].map((n) => (
         <button
           key={n}
           type="button"
-          onClick={() => setPeriode(periodeGlissante(n))}
+          onClick={() => setPeriode(periodeComplete(n))}
           aria-pressed={longueur === n}
           className={cn(
             'px-3.5 py-1.5 rounded-pill text-sm font-medium transition-colors',

@@ -25,7 +25,7 @@ export function GraphiqueDepenseCa({
   points,
   hauteur = 180,
 }: {
-  points: { date: string; depense: number; ca: number }[];
+  points: { date: string; depense: number | null; ca: number | null }[];
   hauteur?: number;
 }) {
   const [survol, setSurvol] = useState<number | null>(null);
@@ -35,19 +35,20 @@ export function GraphiqueDepenseCa({
   }
 
   const largeur = 720;
-  const max = Math.max(1, ...points.map((p) => Math.max(p.depense, p.ca)));
+  const max = Math.max(1, ...points.map((p) => Math.max(p.depense ?? 0, p.ca ?? 0)));
   const pas = largeur / points.length;
   const y = (v: number) => hauteur - (v / max) * hauteur;
 
   const ligne = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${i * pas + pas / 2} ${y(p.ca)}`)
+    .map((p, i) => p.ca === null ? '' : `${i === 0 || points[i - 1].ca === null ? 'M' : 'L'} ${i * pas + pas / 2} ${y(p.ca)}`)
     .join(' ');
 
   const jour = survol === null ? null : points[survol];
-  const totalCa = points.reduce((s, p) => s + p.ca, 0);
-  const totalDepense = points.reduce((s, p) => s + p.depense, 0);
-  const retour = (ca: number, d: number) =>
-    d > 0 ? `${(ca / d).toFixed(1).replace('.', ',')}×` : '—';
+  const totalCa = points.some((p) => p.ca !== null) ? points.reduce((s, p) => s + (p.ca ?? 0), 0) : null;
+  const totalDepense = points.some((p) => p.depense !== null) ? points.reduce((s, p) => s + (p.depense ?? 0), 0) : null;
+  const montant = (n: number | null) => n === null ? '—' : euro(n);
+  const retour = (ca: number | null, d: number | null) =>
+    ca !== null && d !== null && d > 0 ? `${(ca / d).toFixed(1).replace('.', ',')}×` : '—';
 
   return (
     <div>
@@ -61,12 +62,12 @@ export function GraphiqueDepenseCa({
         <span className="flex items-baseline gap-2">
           <span className="inline-block w-4 h-[2px] bg-red translate-y-[-4px]" aria-hidden="true" />
           <span className="text-sm text-ink-muted">Ventes</span>
-          <span className="text-base font-semibold tabular-nums">{euro(jour ? jour.ca : totalCa)}</span>
+          <span className="text-base font-semibold tabular-nums">{montant(jour ? jour.ca : totalCa)}</span>
         </span>
         <span className="flex items-baseline gap-2">
           <span className="inline-block w-3 h-3 rounded-sm bg-ink/15 translate-y-[1px]" aria-hidden="true" />
           <span className="text-sm text-ink-muted">Pub</span>
-          <span className="text-base font-semibold tabular-nums">{euro(jour ? jour.depense : totalDepense)}</span>
+          <span className="text-base font-semibold tabular-nums">{montant(jour ? jour.depense : totalDepense)}</span>
         </span>
         <span className="flex items-baseline gap-2">
           <span className="text-sm text-ink-muted">Retour</span>
@@ -96,7 +97,7 @@ export function GraphiqueDepenseCa({
           role="img"
           aria-label="Dépense publicitaire et chiffre d'affaires par jour"
         >
-          {points.map((p, i) => (
+          {points.map((p, i) => p.depense === null ? null : (
             <rect
               key={p.date}
               x={i * pas + pas * 0.2}
@@ -117,8 +118,8 @@ export function GraphiqueDepenseCa({
                sinon elle double sur un écran large. */
             vectorEffect="non-scaling-stroke"
           />
-          {survol !== null && (
-            <circle cx={survol * pas + pas / 2} cy={y(points[survol].ca)} r={3.5} fill="#FF3B30" vectorEffect="non-scaling-stroke" />
+          {survol !== null && jour && jour.ca !== null && (
+            <circle cx={survol * pas + pas / 2} cy={y(jour.ca)} r={3.5} fill="#FF3B30" vectorEffect="non-scaling-stroke" />
           )}
         </svg>
 
@@ -130,7 +131,7 @@ export function GraphiqueDepenseCa({
               key={p.date}
               type="button"
               tabIndex={-1}
-              aria-label={`${dateCourte(p.date)} : ${euro(p.ca)} de ventes, ${euro(p.depense)} de publicité`}
+              aria-label={`${dateCourte(p.date)} : ${montant(p.ca)} de ventes, ${montant(p.depense)} de publicité`}
               onMouseEnter={() => setSurvol(i)}
               onFocus={() => setSurvol(i)}
               className={`flex-1 min-w-0 ${i === survol ? 'bg-ink/[0.03]' : ''}`}

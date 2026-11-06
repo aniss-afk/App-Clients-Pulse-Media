@@ -4,13 +4,9 @@ L'espace que voit une marque accompagnée par l'agence : ses performances
 tous canaux confondus, les créations produites pour elle, la feuille de
 route et les rapports mensuels.
 
-## Ce que la marque ne voit pas
+## Données et accès
 
-Aucun objet servi par `src/services/espaceClient.ts` ne porte l'identité
-d'un créateur — ni son nom, ni son compte, ni son audience, ni ce qu'il
-touche. La frontière est tenue par le service, pas par l'interface : une
-colonne ajoutée par erreur dans un écran ne peut pas révéler ce qui n'est
-pas dans les données.
+Une session Supabase et un profil rattaché à la marque ouvrent le portail. Les écrans lisent les tables et fonctions de la base partagée avec l’agence. Une période sans import reste vide, une lecture en erreur peut être relancée. Les rapports utilisent ces mêmes données.
 
 ## Démarrer
 
@@ -19,11 +15,19 @@ npm install
 npm run dev
 ```
 
-## État
+## Démonstration avec données simulées
 
-Données entièrement simulées, une seule marque, pas d'authentification.
-Les fonctions du service sont asynchrones exprès : le jour où la base
-répond à leur place, aucun écran ne change.
+Lancer d’abord `npm run demo` dans `Admin-Pulse-Media`, puis dans ce dépôt :
+
+```bash
+npm run demo
+```
+
+Le portail s’ouvre sur http://127.0.0.1:5174, connecté à la marque fictive Maison Sève. Les ventes, charges et commissions sont celles de la base locale partagée avec l’agence. Modifier une charge dans l’agence puis recharger le portail met à jour le même bilan. Un badge identifie la simulation ; aucun compte externe n’est utilisé. Arrêter puis relancer le serveur agence remet les données à zéro.
+
+Le dashboard affiche les ventes nettes HT, les charges, le bénéfice estimé et la marge, avec le détail des canaux au clic. Les revenus attribués Meta/Google/GA4/Klaviyo ne sont jamais additionnés au chiffre d’affaires de la boutique. Une couverture incomplète masque le résultat au lieu d’afficher un zéro trompeur. Le détail et les validations sont protégés par les fonctions et RLS du backend partagé.
+
+Le mode connecté nécessite les deux migrations de pilotage financier et des sources du dépôt agence. Sans ces migrations, une erreur de lecture est affichée, sans repli automatique sur des chiffres fictifs.
 
 ## Charte
 
