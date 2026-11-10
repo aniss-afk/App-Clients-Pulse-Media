@@ -117,7 +117,7 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
   );
 
   return <Ctx.Provider value={valeur}>
-    {import.meta.env.VITE_DONNEES_REELLES === 'false' && <p className="text-sm px-5 py-2 bg-inset" role="status">Démonstration — données fictives, modifications conservées dans ce navigateur.</p>}
+
     {erreur && <p className="text-sm px-5 py-3 text-red-ink" role="alert">Données indisponibles : {erreur} <button type="button" onClick={() => void recharger().catch(() => undefined)}>Réessayer</button></p>}
     {(!erreur || etat.marque) && children}
   </Ctx.Provider>;

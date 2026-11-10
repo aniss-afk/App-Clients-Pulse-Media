@@ -34,19 +34,6 @@ import type {
  * créateurs et le contenu interne de l'agence.
  */
 
-/**
- * Vrai quand on lit la base plutôt que la démonstration.
- *
- * L'espace ne s'ouvre plus sans session ni sans rattachement à une
- * marque : à partir de là, montrer les chiffres d'une autre marque
- * serait pire que de ne rien montrer. Le réel est donc la règle, et
- * `VITE_DONNEES_REELLES=false` la seule façon de repasser en
- * démonstration — pour une capture d'écran ou une présentation.
- */
-export async function branchee(): Promise<boolean> {
-  return import.meta.env.VITE_DONNEES_REELLES !== 'false';
-}
-
 const jour = (v: string | null) => (v ?? '').slice(0, 10);
 const num = (v: unknown) => Number(v ?? 0);
 

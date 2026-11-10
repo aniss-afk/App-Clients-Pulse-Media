@@ -33,7 +33,7 @@ export function Porte({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (import.meta.env.VITE_DONNEES_REELLES === 'false') return;
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(Boolean(data.session));
       if (data.session) void relire();
@@ -46,7 +46,6 @@ export function Porte({ children }: { children: ReactNode }) {
     return () => ecoute.subscription.unsubscribe();
   }, [relire]);
 
-  if (import.meta.env.VITE_DONNEES_REELLES === 'false') return <Contexte.Provider value={{id:'demo',email:'demo@example.test',nom:'Camille',role:'client',clientId:'demo',marque:'Maison Sève'}}>{children}</Contexte.Provider>;
   if (session === null) return <Attente />;
   if (!session) return <Connexion onEntre={() => void relire()} />;
   if (erreur) return <Message titre="Quelque chose cloche" texte={erreur} />;
