@@ -10,9 +10,9 @@ import { createClient } from '@supabase/supabase-js';
  * conception, et une requête faite depuis la console du navigateur ne
  * rapporte rien de plus que l'application.
  */
-const URL = import.meta.env.VITE_SUPABASE_URL ?? 'https://cnyjtqbjzzgblmxqcbzw.supabase.co';
+const URL = import.meta.env.VITE_DONNEES_REELLES === 'false' ? 'http://127.0.0.1:54321' : import.meta.env.VITE_SUPABASE_URL ?? 'https://cnyjtqbjzzgblmxqcbzw.supabase.co';
 const CLE =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ??
+  import.meta.env.VITE_DONNEES_REELLES === 'false' ? 'simulation-local-key' : import.meta.env.VITE_SUPABASE_ANON_KEY ??
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNueWp0cWJqenpnYmxteHFjYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzODExNzEsImV4cCI6MjEwMzk1NzE3MX0.HyI9zHRWAIz0mR12B3-H2jhOCEhafSzYMQfwaGAWlMQ';
 
 /**
@@ -25,8 +25,8 @@ const CLE =
  */
 export const supabase = createClient(URL, CLE, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: import.meta.env.VITE_DONNEES_REELLES !== 'false',
+    autoRefreshToken: import.meta.env.VITE_DONNEES_REELLES !== 'false',
     storageKey: 'pulse-marque',
   },
 });

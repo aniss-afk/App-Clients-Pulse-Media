@@ -1,20 +1,14 @@
 /**
  * Ce que la marque voit.
  *
- * Une frontière traverse ce fichier et c'est la seule chose à en
- * retenir : aucun objet servi ici ne porte l'identité d'un créateur —
- * ni son nom, ni son compte, ni son audience, ni ce qu'il touche. La
- * marque voit ses campagnes, les créations produites pour elle, ses
- * dépenses et ses résultats. La frontière est tenue par le service,
- * pas par l'interface : une colonne ajoutée par erreur dans un écran
- * ne peut pas révéler ce qui n'est pas dans les données.
+ * La marque voit le travail, les prénoms et les comptes publics des
+ * créateurs engagés. Le dossier privé et leurs commissions restent
+ * réservés à l'agence et aux créateurs concernés. Cette frontière est
+ * appliquée par les fonctions SQL, puis conservée dans les objets UI.
  *
- * Chaque lecture demande d'abord à la base et retombe sur les données
- * simulées quand la table est vide. Cette retombée est délibérée : une
- * marque qui ouvre son espace avant que l'agence ait rempli quoi que
- * ce soit verrait sinon des zéros partout et croirait que la campagne
- * ne produit rien. `VITE_DONNEES_REELLES=false` force la
- * démonstration, pour une capture d'écran ou une présentation.
+ * Les lectures réelles conservent les résultats vides et remontent les
+ * erreurs. La démonstration locale s'active uniquement avec
+ * `VITE_DONNEES_REELLES=false`, sans connexion à Supabase.
  */
 import * as base from './base';
 
@@ -57,7 +51,7 @@ export interface CaJour {
   date: string;
   ca: number;
   commandes: number;
-  nouveauxClients: number;
+  nouveauxClients: number | null;
 }
 
 export type StatutCampagne = 'a_venir' | 'active' | 'terminee';
@@ -393,21 +387,12 @@ const demo = {
 
 const copie = <T,>(t: T[]): T[] => t.map((x) => ({ ...x }));
 
-/**
- * Demande à la base, retombe sur la démonstration.
- *
- * Une table vide compte comme une absence de réponse : c'est le cas le
- * plus fréquent au démarrage d'un compte, et une liste vide se
- * distingue mal d'une panne à l'écran.
- */
-async function reelOuDemo<T>(lire: () => Promise<T[] | null>, demo: T[]): Promise<T[]> {
-  if (!(await base.branchee())) return copie(demo);
-  try {
-    const r = await lire();
-    return r && r.length > 0 ? r : copie(demo);
-  } catch {
-    return copie(demo);
-  }
+/** Une liste vide reste vide. Une panne réelle n'ouvre jamais la démonstration. */
+async function reelOuDemo<T>(lire: () => Promise<T[] | null>, simulation: T[]): Promise<T[]> {
+  if (!(await base.branchee())) return copie(simulation);
+  const r = await lire();
+  if (r === null) throw new Error('Données indisponibles. Réessayez.');
+  return r;
 }
 
 /* ------------------------------------------------------------------ */
@@ -416,11 +401,9 @@ async function reelOuDemo<T>(lire: () => Promise<T[] | null>, demo: T[]): Promis
 
 export async function getMarque(): Promise<Marque> {
   if (!(await base.branchee())) return { ...demo.marque };
-  try {
-    return (await base.marque()) ?? { ...demo.marque };
-  } catch {
-    return { ...demo.marque };
-  }
+  const marque = await base.marque();
+  if (!marque) throw new Error('Marque indisponible.');
+  return marque;
 }
 export async function getCampagnes(): Promise<Campagne[]> {
   return reelOuDemo(base.campagnes, demo.campagnes);
@@ -443,11 +426,13 @@ export async function getProfils(): Promise<Profil[]> {
  * une décision qui mérite un aller-retour.
  */
 export async function trancherProfil(participationId: string, retenu: boolean, avis?: string): Promise<void> {
+  if (!(await base.branchee())) { const p = demo.profils.find(p => p.participationId === participationId); if (!p) throw new Error('Profil introuvable.'); p.choix = retenu ? 'retenu' : 'ecarte'; p.avis = avis ?? null; sauverDemo(); return; }
   await base.trancherProfil(participationId, retenu, avis ?? null);
 }
 
 /** La marque rend sa copie. Rien ne part aux créateurs : l'agence confirme derrière. */
 export async function bouclerSelection(campagneId: string): Promise<void> {
+  if (!(await base.branchee())) { const p = demo.profils.filter(p => p.campagneId === campagneId); if (!p.length || p.some(p => p.choix === null)) throw new Error('Terminez votre sélection.'); p.forEach(p => { p.etape = 'retour_client'; }); sauverDemo(); return; }
   await base.bouclerSelection(campagneId);
 }
 export async function getEtapes(): Promise<Etape[]> {
@@ -476,12 +461,14 @@ export async function getDocuments(): Promise<Document[]> {
 /** Valider, c'est autoriser la diffusion. Rien d'autre ne se passe ici. */
 export async function validerCreation(id: string): Promise<void> {
   if (await base.branchee()) {
-    if (await base.validerCreation(id)) return;
+    await base.validerCreation(id);
+    return;
   }
   const c = demo.creations.find((x) => x.id === id);
-  if (!c) return;
+  if (!c) throw new Error('Création introuvable.');
   c.statut = 'validee';
   c.motif = null;
+  sauverDemo();
 }
 
 /**
@@ -491,13 +478,16 @@ export async function validerCreation(id: string): Promise<void> {
  * raison revient à l'identique, et on a perdu trois jours.
  */
 export async function demanderRevision(id: string, motif: string): Promise<void> {
+  if (!motif.trim()) throw new Error('Précisez la retouche demandée.');
   if (await base.branchee()) {
-    if (await base.demanderRevision(id, motif)) return;
+    await base.demanderRevision(id, motif);
+    return;
   }
   const c = demo.creations.find((x) => x.id === id);
-  if (!c) return;
+  if (!c) throw new Error('Création introuvable.');
   c.statut = 'a_revoir';
   c.motif = motif;
+  sauverDemo();
 }
 
 /**
@@ -507,9 +497,11 @@ export async function demanderRevision(id: string, motif: string): Promise<void>
  * de la relation. Rien ne se perd sur une messagerie.
  */
 export async function envoyerDemande(texte: string): Promise<Demande> {
+  if (!texte.trim()) throw new Error('La demande est vide.');
   if (await base.branchee()) {
     const envoyee = await base.envoyerDemande(texte);
-    if (envoyee) return envoyee;
+    if (!envoyee) throw new Error('La demande n’a pas été enregistrée.');
+    return envoyee;
   }
   const d: Demande = {
     id: `dm-${Date.now().toString(36)}`,
@@ -519,6 +511,7 @@ export async function envoyerDemande(texte: string): Promise<Demande> {
     reponse: null,
   };
   demo.demandes.unshift(d);
+  sauverDemo();
   return d;
 }
 
@@ -576,7 +569,7 @@ export function synthese(
 /* Périodes et calculs                                                 */
 /* ------------------------------------------------------------------ */
 
-export function periodeGlissante(jours: number, fin = AUJOURDHUI): Periode {
+export function periodeGlissante(jours: number, fin = import.meta.env.VITE_DONNEES_REELLES === 'false' ? AUJOURDHUI : new Date()): Periode {
   const debut = new Date(fin);
   debut.setDate(debut.getDate() - (jours - 1));
   return { debut: jourISO(debut), fin: jourISO(fin) };
@@ -609,7 +602,7 @@ export interface Bilan {
   roasParPlateforme: Record<string, number | null>;
   ca: number;
   commandes: number;
-  nouveauxClients: number;
+  nouveauxClients: number | null;
   /** CA réel ÷ dépense totale. Le seul chiffre qui explique le compte en banque. */
   mer: number | null;
   cpa: number | null;
@@ -638,7 +631,8 @@ export function bilan(metriques: MetriqueJour[], ca: CaJour[], periode: Periode)
 
   const total = c.reduce((s, x) => s + x.ca, 0);
   const commandes = c.reduce((s, x) => s + x.commandes, 0);
-  const nouveauxClients = c.reduce((s, x) => s + x.nouveauxClients, 0);
+  const nouveauxClients = c.length && c.every(x => x.nouveauxClients !== null)
+    ? c.reduce((s, x) => s + (x.nouveauxClients ?? 0), 0) : null;
 
   return {
     depense,
@@ -649,7 +643,7 @@ export function bilan(metriques: MetriqueJour[], ca: CaJour[], periode: Periode)
     commandes,
     nouveauxClients,
     mer: depense > 0 ? total / depense : null,
-    cpa: nouveauxClients > 0 ? depense / nouveauxClients : null,
+    cpa: nouveauxClients !== null && nouveauxClients > 0 ? depense / nouveauxClients : null,
   };
 }
 
@@ -694,6 +688,7 @@ export async function enregistrerMarque(saisie: {
   telephone: string;
   secteur: string;
 }): Promise<void> {
+  if (!(await base.branchee())) { Object.assign(demo.marque, saisie); sauverDemo(); return; }
   const { supabase } = await import('../auth/supabase');
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Non connecté');
@@ -702,7 +697,7 @@ export async function enregistrerMarque(saisie: {
     .from('profiles').select('client_id').eq('id', session.user.id).maybeSingle();
   if (!profil?.client_id) throw new Error('Aucune marque rattachée à ce compte.');
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('clients')
     .update({
       nom: saisie.nom.trim(),
@@ -711,6 +706,38 @@ export async function enregistrerMarque(saisie: {
       telephone: saisie.telephone.trim() || null,
       secteur: saisie.secteur.trim() || null,
     })
-    .eq('id', profil.client_id);
+    .eq('id', profil.client_id).select('id').single();
   if (error) throw new Error(error.message);
+  if (!data) throw new Error('Les informations de la marque n’ont pas été enregistrées.');
+}
+
+export interface SuiviClient { id: string; type: 'action'|'relance'; titre: string; detail: string|null; echeance: string|null; statut: string; genre: string; reponse: string|null }
+export interface RapportPublie { id: string; periode: 'hebdo'|'mensuel'; debut: string; fin: string; contenu: string|null; drive_url: string|null; cree_le: string }
+const suiviDemo: SuiviClient[] = [
+  {id:'suivi-1',type:'action',titre:'Valider le plan du mois',detail:'Deux créations et une campagne e-mail.',echeance:'2026-09-06',statut:'ouverte',genre:'a_valider',reponse:null},
+  {id:'suivi-2',type:'relance',titre:'Confirmer les stocks disponibles',detail:null,echeance:'2026-09-07',statut:'ouverte',genre:'attente_marque',reponse:null},
+];
+const rapportsDemo: RapportPublie[] = [{id:'rapport-1',periode:'mensuel',debut:'2026-08-01',fin:'2026-08-31',contenu:'Rapport de démonstration. Les créations ont été diffusées ; le prochain plan attend votre validation.',drive_url:null,cree_le:'2026-09-01'}];
+export const getSuivi = () => reelOuDemo<SuiviClient>(base.suivi, suiviDemo);
+export const getRapports = () => reelOuDemo<RapportPublie>(base.rapports, rapportsDemo);
+export async function repondreSuivi(type: SuiviClient['type'], id: string, decision: 'valider'|'refuser'|'terminer', message?: string) {
+  if (decision === 'refuser' && !message?.trim()) throw new Error('Précisez votre retour.');
+  if (await base.branchee()) return base.repondreSuivi(type,id,decision,message);
+  const ligne = suiviDemo.find(x => x.id === id && x.type === type);
+  if (!ligne || ligne.statut !== 'ouverte') throw new Error('Action indisponible.');
+  if (ligne.genre === 'a_valider' && decision !== 'terminer') ligne.statut = decision === 'valider' ? 'validee' : 'refusee';
+  else if (ligne.genre === 'attente_marque' && decision === 'terminer') ligne.statut = 'terminee';
+  else throw new Error('Décision non autorisée.');
+  ligne.reponse = message ?? null;
+  sauverDemo();
+}
+function sauverDemo() {
+  try { localStorage.setItem('pulse-marque-simulation-v1', JSON.stringify({demo,suivi:suiviDemo})); } catch { /* stockage indisponible : état conservé dans cet onglet */ }
+}
+if (import.meta.env.VITE_DONNEES_REELLES === 'false') {
+  try {
+    const etat = JSON.parse(localStorage.getItem('pulse-marque-simulation-v1') ?? 'null');
+    if (etat?.demo) Object.assign(demo, etat.demo);
+    if (Array.isArray(etat?.suivi)) suiviDemo.splice(0,suiviDemo.length,...etat.suivi);
+  } catch { /* jeu initial */ }
 }

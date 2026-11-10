@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {
   ActionAgence,
+  SuiviClient, RapportPublie, getSuivi, getRapports,
   CaJour,
   Campagne,
   Creation,
@@ -42,6 +43,8 @@ import {
  * clignoter les mêmes chiffres à chaque navigation.
  */
 interface Donnees {
+  suivi: SuiviClient[];
+  rapports: RapportPublie[];
   marque: Marque | null;
   campagnes: Campagne[];
   creations: Creation[];
@@ -63,6 +66,7 @@ const Ctx = createContext<Donnees | null>(null);
 
 export function DonneesProvider({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<Omit<Donnees, 'periode' | 'setPeriode' | 'recharger'>>({
+    suivi: [], rapports: [],
     marque: null,
     campagnes: [],
     creations: [],
@@ -81,8 +85,10 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
      court pour que la tendance récente ne soit pas noyée. */
   const [periode, setPeriode] = useState<Periode>(() => periodeGlissante(30));
 
+  const [erreur,setErreur] = useState<string|null>(null);
   const recharger = useCallback(async () => {
-    const [marque, campagnes, creations, createurs, profils, etapes, metriques, ca, actions, demandes, documents] =
+    try {
+    const [marque, campagnes, creations, createurs, profils, etapes, metriques, ca, actions, demandes, documents, suivi, rapports] =
       await Promise.all([
         getMarque(),
         getCampagnes(),
@@ -94,13 +100,15 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
         getCa(),
         getActions(),
         getDemandes(),
-        getDocuments(),
+        getDocuments(), getSuivi(), getRapports(),
       ]);
-    setEtat({ marque, campagnes, creations, createurs, profils, etapes, metriques, ca, actions, demandes, documents, chargement: false });
+    setEtat({ marque, campagnes, creations, createurs, profils, etapes, metriques, ca, actions, demandes, documents, suivi, rapports, chargement: false });
+    setErreur(null);
+    } catch(e) { setErreur((e as Error).message); setEtat(v => ({...v,chargement:false})); throw e; }
   }, []);
 
   useEffect(() => {
-    void recharger();
+    void recharger().catch(() => undefined);
   }, [recharger]);
 
   const valeur = useMemo(
@@ -108,7 +116,11 @@ export function DonneesProvider({ children }: { children: ReactNode }) {
     [etat, periode, recharger],
   );
 
-  return <Ctx.Provider value={valeur}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={valeur}>
+    {import.meta.env.VITE_DONNEES_REELLES === 'false' && <p className="text-sm px-5 py-2 bg-inset" role="status">Démonstration — données fictives, modifications conservées dans ce navigateur.</p>}
+    {erreur && <p className="text-sm px-5 py-3 text-red-ink" role="alert">Données indisponibles : {erreur} <button type="button" onClick={() => void recharger().catch(() => undefined)}>Réessayer</button></p>}
+    {(!erreur || etat.marque) && children}
+  </Ctx.Provider>;
 }
 
 export function useDonnees(): Donnees {

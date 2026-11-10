@@ -26,6 +26,7 @@ export function Creations() {
   const [aRevoir, setARevoir] = useState<Creation | null>(null);
   const [choisir, setChoisir] = useState(false);
   const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string|null>(null);
 
   const produitDe = useMemo(
     () => new Map(campagnes.map((c) => [c.id, c.produit])),
@@ -42,10 +43,11 @@ export function Creations() {
 
   async function valider(id: string) {
     setEnCours(true);
+    setErreur(null);
     try {
       await validerCreation(id);
       await recharger();
-    } finally {
+    } catch(e) { setErreur((e as Error).message); } finally {
       setEnCours(false);
     }
   }
@@ -56,6 +58,8 @@ export function Creations() {
         titre="Créations"
         sous="Chaque vidéo produite pour vous, et qui l'a faite."
       />
+
+      {erreur && <p role="alert" className="text-sm text-red-ink mb-4">{erreur}</p>}
 
       {/* La sélection passe devant tout : elle bloque le départ d'une
           vague, et elle est la seule chose ici qui ait une échéance. */}
@@ -236,7 +240,7 @@ function PanneauReprise({
       await demanderRevision(creation.id, motif.trim());
       await onFait();
       onFermer();
-    } finally {
+    } catch(e) { setFaute((e as Error).message); } finally {
       setEnCours(false);
     }
   }

@@ -1,16 +1,4 @@
-# App Clients — Pulse Media
-
-L'espace que voit une marque accompagnée par l'agence : ses performances
-tous canaux confondus, les créations produites pour elle, la feuille de
-route et les rapports mensuels.
-
-## Ce que la marque ne voit pas
-
-Aucun objet servi par `src/services/espaceClient.ts` ne porte l'identité
-d'un créateur — ni son nom, ni son compte, ni son audience, ni ce qu'il
-touche. La frontière est tenue par le service, pas par l'interface : une
-colonne ajoutée par erreur dans un écran ne peut pas révéler ce qui n'est
-pas dans les données.
+# Espace marque — Pulse Media
 
 ## Démarrer
 
@@ -19,14 +7,37 @@ npm install
 npm run dev
 ```
 
-## État
+Le mode réel est activé par défaut. Configurer `VITE_SUPABASE_URL` et
+`VITE_SUPABASE_ANON_KEY`, puis se connecter avec un compte rattaché à la marque
+ou au créateur. Les autorisations viennent de la base, jamais d’un filtre navigateur.
+Une lecture vide reste vide et une erreur reste visible ; aucun remplacement par
+les données de démonstration n’est effectué en mode réel.
 
-Données entièrement simulées, une seule marque, pas d'authentification.
-Les fonctions du service sont asynchrones exprès : le jour où la base
-répond à leur place, aucun écran ne change.
+Les fonctions du pont entre espaces nécessitent la migration Admin
+`20261110193154_pont_espaces_workflows.sql` et ses migrations historiques.
+Les rapports et demandes internes de l’agence restent privés tant qu’ils ne sont
+pas publiés explicitement. Les décisions sur une création portent sur la même ligne
+pour la marque, le créateur et l’agence.
 
-## Charte
+## Simulation locale indépendante
 
-Identique à l'espace de gestion : crème `#F1EDE3`, encre `#12110F`,
-rouge `#FF3B30`, Archivo. Le rouge est un aplat et une marque, jamais du
-texte en petit corps — c'est `red-ink` qui porte les mots.
+```bash
+npm run demo
+```
+
+Cette commande définit explicitement `VITE_DONNEES_REELLES=false` : ni connexion
+Supabase ni identifiants réels ne sont utilisés. Un bandeau identifie la simulation.
+Les décisions sont conservées dans le localStorage du navigateur. Effacer la clé
+`pulse-marque-simulation-v1` pour repartir du jeu initial.
+Cette simulation indépendante ne synchronise pas deux origines de navigateur ;
+la démonstration intégrée de l’Admin utilise les vraies fonctions SQL sur PGlite local.
+
+## Vérification
+
+```bash
+npm run typecheck
+npm run build
+```
+
+Le dépôt Admin contient `tests/pont-espaces.test.mjs` : fonctions SQL avec RLS,
+isolation de deux boutiques, services réels compilés, erreurs et persistance locale.

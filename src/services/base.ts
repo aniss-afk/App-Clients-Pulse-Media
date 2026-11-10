@@ -29,10 +29,9 @@ import type {
  * par `client_id` — ce serait un filtre de confort qu'on croirait être
  * une protection.
  *
- * Deux exceptions passent par des vues et des fonctions plutôt que par
- * les tables : `contenus_marque`, qui retire l'identité du créateur de
- * chaque contenu, et `campagnes_marque()`, qui compte les créateurs
- * engagés sans jamais les nommer.
+ * Les fonctions créations, sélection, suivi et rapports servent des
+ * objets limités à cette marque. Elles retirent le dossier privé des
+ * créateurs et le contenu interne de l'agence.
  */
 
 /**
@@ -45,9 +44,7 @@ import type {
  * démonstration — pour une capture d'écran ou une présentation.
  */
 export async function branchee(): Promise<boolean> {
-  if (import.meta.env.VITE_DONNEES_REELLES === 'false') return false;
-  const { data: { session } } = await supabase.auth.getSession();
-  return Boolean(session);
+  return import.meta.env.VITE_DONNEES_REELLES !== 'false';
 }
 
 const jour = (v: string | null) => (v ?? '').slice(0, 10);
@@ -61,12 +58,13 @@ const teinte = (id: string) =>
   TEINTES[[...id].reduce((n, c) => n + c.charCodeAt(0), 0) % TEINTES.length];
 
 export async function marque(): Promise<Marque | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('clients')
     .select('id, nom, contact, email, site, telephone, secteur, depuis')
     .limit(1)
     .maybeSingle();
-  if (!data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Aucune marque accessible.');
   return {
     id: data.id,
     nom: data.nom ?? '',
@@ -81,7 +79,8 @@ export async function marque(): Promise<Marque | null> {
 
 export async function campagnes(): Promise<Campagne[] | null> {
   const { data, error } = await supabase.rpc('campagnes_marque');
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return (data as Record<string, unknown>[]).map((c) => ({
     id: String(c.id),
     produit: String(c.produit ?? ''),
@@ -101,7 +100,8 @@ export async function creations(): Promise<Creation[] | null> {
      n'a aucune politique de lecture. Une vue en `security_invoker` y
      perdrait les lignes ; la fonction porte le filtre par marque. */
   const { data, error } = await supabase.rpc('creations_marque');
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return (data as Record<string, any>[]).map((c) => ({
     id: c.id,
     campagneId: c.campaign_id,
@@ -132,7 +132,8 @@ export async function creations(): Promise<Creation[] | null> {
 
 export async function createurs(): Promise<Createur[] | null> {
   const { data, error } = await supabase.rpc('createurs_marque');
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return (data as Record<string, any>[]).map((c) => ({
     id: String(c.creator_id),
     prenom: String(c.prenom ?? ''),
@@ -152,7 +153,8 @@ export async function etapes(): Promise<Etape[] | null> {
     .from('etapes_roadmap')
     .select('id, campaign_id, date, titre, detail, statut')
     .order('date');
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return data.map((e) => ({
     id: e.id,
     campagneId: e.campaign_id,
@@ -168,7 +170,8 @@ export async function metriques(): Promise<MetriqueJour[] | null> {
     .from('metriques_jour')
     .select('plateforme, date, depense, impressions, clics, conversions, revenu_attribue')
     .order('date');
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return data.map((m) => ({
     plateforme: (m.plateforme as Plateforme) ?? 'meta',
     date: jour(m.date),
@@ -185,12 +188,13 @@ export async function ca(): Promise<CaJour[] | null> {
     .from('ca_jour')
     .select('date, ca, commandes, nouveaux_clients')
     .order('date');
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return data.map((c) => ({
     date: jour(c.date),
     ca: num(c.ca),
     commandes: num(c.commandes),
-    nouveauxClients: num(c.nouveaux_clients),
+    nouveauxClients: c.nouveaux_clients == null ? null : num(c.nouveaux_clients),
   }));
 }
 
@@ -199,7 +203,8 @@ export async function actions(): Promise<ActionAgence[] | null> {
     .from('actions_agence')
     .select('id, date, canal, action, raison, resultat')
     .order('date', { ascending: false });
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return data.map((a) => ({
     id: a.id,
     date: jour(a.date),
@@ -215,12 +220,13 @@ export async function demandes(): Promise<Demande[] | null> {
     .from('demandes')
     .select('id, texte, statut, reponse, cree_le')
     .order('cree_le', { ascending: false });
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return data.map((d) => ({
     id: d.id,
     date: jour(d.cree_le),
     texte: d.texte ?? '',
-    statut: (d.statut as StatutDemande) ?? 'envoyee',
+    statut: d.statut === 'nouvelle' ? 'envoyee' : (d.statut as StatutDemande),
     reponse: d.reponse,
   }));
 }
@@ -230,7 +236,8 @@ export async function documents(): Promise<Document[] | null> {
     .from('documents')
     .select('id, nom, type, date, fichier')
     .order('date', { ascending: false });
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return data.map((d) => ({
     id: d.id,
     nom: d.nom ?? '',
@@ -242,44 +249,38 @@ export async function documents(): Promise<Document[] | null> {
 
 /* ---------------- Écritures ---------------- */
 
-/** Valider, c'est autoriser la diffusion. Rien d'autre ne se passe ici. */
-export async function validerCreation(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('creator_contents')
-    .update({ statut_marque: 'validee', motif_marque: null })
-    .eq('id', id);
-  return !error;
+export async function validerCreation(id: string): Promise<void> {
+  const { error } = await supabase.rpc('decider_creation_marque', { p_contenu: id, p_valider: true });
+  if (error) throw new Error(error.message);
 }
 
-export async function demanderRevision(id: string, motif: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('creator_contents')
-    .update({ statut_marque: 'a_revoir', motif_marque: motif })
-    .eq('id', id);
-  return !error;
+export async function demanderRevision(id: string, motif: string): Promise<void> {
+  const { error } = await supabase.rpc('decider_creation_marque', { p_contenu: id, p_valider: false, p_motif: motif });
+  if (error) throw new Error(error.message);
 }
 
 export async function envoyerDemande(texte: string): Promise<Demande | null> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
+  if (!session) throw new Error('Non connecté');
   const { data: profil } = await supabase
     .from('profiles')
     .select('client_id')
     .eq('id', session.user.id)
     .maybeSingle();
-  if (!profil?.client_id) return null;
+  if (!profil?.client_id) throw new Error('Aucune marque rattachée.');
 
   const { data, error } = await supabase
     .from('demandes')
-    .insert({ client_id: profil.client_id, texte, statut: 'envoyee' })
+    .insert({ client_id: profil.client_id, texte, statut: 'nouvelle' })
     .select('id, texte, statut, reponse, cree_le')
     .single();
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('La demande n’a pas été enregistrée.');
   return {
     id: data.id,
     date: jour(data.cree_le),
     texte: data.texte ?? '',
-    statut: (data.statut as StatutDemande) ?? 'envoyee',
+    statut: data.statut === 'nouvelle' ? 'envoyee' : (data.statut as StatutDemande),
     reponse: data.reponse,
   };
 }
@@ -290,7 +291,8 @@ export async function envoyerDemande(texte: string): Promise<Demande | null> {
 
 export async function profils(): Promise<Profil[] | null> {
   const { data, error } = await supabase.rpc('selection_marque');
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
+  if (!data) return [];
   return (data as Record<string, any>[]).map((r) => ({
     participationId: String(r.participation_id),
     campagneId: String(r.campaign_id),
@@ -321,5 +323,20 @@ export async function trancherProfil(participationId: string, retenu: boolean, a
 
 export async function bouclerSelection(campagneId: string): Promise<void> {
   const { error } = await supabase.rpc('boucler_selection', { p_campagne: campagneId });
+  if (error) throw new Error(error.message);
+}
+
+export async function suivi() {
+  const { data, error } = await supabase.rpc('suivi_marque');
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+export async function rapports() {
+  const { data, error } = await supabase.rpc('rapports_marque');
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+export async function repondreSuivi(type: string, id: string, decision: string, message?: string) {
+  const { error } = await supabase.rpc('repondre_suivi_marque', { p_type: type, p_id: id, p_decision: decision, p_message: message ?? null });
   if (error) throw new Error(error.message);
 }

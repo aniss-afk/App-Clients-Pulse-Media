@@ -70,7 +70,7 @@ function Corps() {
   }
   if (actuel.cpa !== null) {
     lecture.push(
-      `Un nouveau client a coûté ${euro(actuel.cpa)} à acquérir, pour ${nombre(actuel.nouveauxClients)} nouveaux clients sur le mois.`,
+      `Un nouveau client a coûté ${euro(actuel.cpa)} à acquérir, pour ${(actuel.nouveauxClients === null ? '—' : nombre(actuel.nouveauxClients))} nouveaux clients sur le mois.`,
     );
   }
   if (creations.length > 0) {
@@ -122,7 +122,7 @@ function Corps() {
             <Chiffre
               label="Coût par nouveau client"
               valeur={actuel.cpa !== null ? euro(actuel.cpa) : '—'}
-              sous={`${nombre(actuel.nouveauxClients)} nouveaux clients`}
+              sous={`${(actuel.nouveauxClients === null ? '—' : nombre(actuel.nouveauxClients))} nouveaux clients`}
             />
           </div>
           <div className="mt-6">
