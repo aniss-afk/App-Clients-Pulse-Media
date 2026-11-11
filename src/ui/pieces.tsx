@@ -98,10 +98,10 @@ export function Mesures({
             <p className="text-2xl font-bold tracking-[-0.02em] tabular-nums mt-2">
               {i === hero ? <Surligne>{m.valeur}</Surligne> : m.valeur}
             </p>
-            {(m.sous || m.delta !== undefined) && (
+            {(m.sous || (m.delta !== undefined && m.delta !== null)) && (
               <p className="text-xs mt-1.5 text-ink-faint">
-                {m.delta !== undefined && <Delta v={m.delta} />}
-                {m.delta !== undefined && m.sous && ' · '}
+                {m.delta !== undefined && m.delta !== null && <Delta v={m.delta} />}
+                {m.delta !== undefined && m.delta !== null && m.sous && ' · '}
                 {m.sous}
               </p>
             )}

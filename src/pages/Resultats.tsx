@@ -11,10 +11,13 @@ import {
   Plateforme,
   bilan,
   envoyerDemande,
-  periodeDuMois,
+  couvertureTexte,
+  dans,
+  jourUTC,
+  periodeRapport,
   periodePrecedente,
   serieJournaliere,
-  variation,
+  variationsComparables,
 } from '../services/espaceClient';
 import { dateLongue, euro, mois as libelleMois, nombre, ratio } from '../lib';
 
@@ -41,6 +44,7 @@ export function Resultats() {
     () => serieJournaliere(d.metriques, d.ca, d.periode),
     [d.metriques, d.ca, d.periode],
   );
+  const deltas = variationsComparables(actuel, avant);
   /* Le bandeau « En bref » disait en prose ce que la page dit déjà
      trois fois : la première phrase reprenait les quatre chiffres qui
      la suivent, la deuxième une ligne du journal, la troisième la
@@ -54,8 +58,8 @@ export function Resultats() {
   /* Les mois où il s'est passé quelque chose, déduits des données
      plutôt que d'une liste écrite à la main qui finirait par diverger. */
   const rapports = useMemo(() => {
-    const mois = [...new Set(d.ca.map((c) => c.date.slice(0, 7)))].sort().reverse();
-    return mois.map((m) => ({ mois: m, bilan: bilan(d.metriques, d.ca, periodeDuMois(m)) }));
+    const mois = [...new Set([...d.ca, ...d.metriques].filter(c => c.date < jourUTC()).map(c => c.date.slice(0, 7)))].sort().reverse();
+    return mois.map(m => ({ mois: m, bilan: bilan(d.metriques, d.ca, periodeRapport(m)) }));
   }, [d.metriques, d.ca]);
 
   if (d.chargement) return <Vide>Chargement…</Vide>;
@@ -64,13 +68,13 @@ export function Resultats() {
   const campagnesActives = d.campagnes.filter((c) => c.statut === 'active');
   /* Les trois dernières actions, pas toute l'histoire : le journal
      est à un clic et c'est lui qui la raconte. */
-  const recentes = [...d.actions].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 3);
+  const recentes = d.actions.filter(a => dans(a.date, d.periode)).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 3);
 
   /* Ce que la page « Performance » disait en plus, et qui n'était que
      le dépliage de ces mêmes quatre chiffres : où part la dépense, ce
      que chaque plateforme s'attribue, et le trafic acheté. */
   const plateformes = Object.keys(actuel.depenseParPlateforme).sort() as Plateforme[];
-  const surAttribution = actuel.ca > 0 ? (actuel.revenuAttribue / actuel.ca) * 100 : null;
+  const surAttribution = actuel.couverture.caComplete && actuel.couverture.pubComplete && actuel.ca > 0 ? (actuel.revenuAttribue / actuel.ca) * 100 : null;
   const dansPeriode = d.metriques.filter((m) => m.date >= d.periode.debut && m.date <= d.periode.fin);
   const impressions = dansPeriode.reduce((sm, m) => sm + m.impressions, 0);
   const clics = dansPeriode.reduce((sm, m) => sm + m.clics, 0);
@@ -133,20 +137,21 @@ export function Resultats() {
           items={[
             {
               label: "Chiffre d'affaires",
-              valeur: euro(actuel.ca),
-              delta: variation(actuel.ca, avant.ca),
-              sous: `${actuel.commandes} commandes`,
+              valeur: actuel.couverture.joursCa ? euro(actuel.ca) : '—',
+              delta: deltas.ca,
+              sous: couvertureTexte(actuel, 'ca') ?? `${actuel.commandes} commandes`,
               fort: true,
             },
             {
               label: 'Dépense publicitaire',
-              valeur: euro(actuel.depense),
-              delta: variation(actuel.depense, avant.depense),
+              valeur: plateformes.length ? euro(actuel.depense) : '—',
+              delta: deltas.depense,
+              sous: couvertureTexte(actuel, 'pub'),
             },
             {
               label: 'Retour sur dépense',
               valeur: ratio(actuel.mer),
-              delta: actuel.mer !== null && avant.mer !== null ? variation(actuel.mer, avant.mer) : null,
+              delta: deltas.mer,
               sous: 'CA ÷ dépense',
             },
             {
@@ -166,7 +171,7 @@ export function Resultats() {
 
       <Zone titre="Par canal" compte={plateformes.length}>
         {plateformes.length === 0 ? (
-          <Vide>Aucune dépense sur la période.</Vide>
+          <Vide>Aucune dépense reçue sur la période.</Vide>
         ) : (
           <>
             <Tableau colonnes={['Canal', 'Dépense', 'Part', 'Retour déclaré']}>
@@ -228,7 +233,7 @@ export function Resultats() {
               <li key={a.id} className="px-5 py-4 flex gap-5">
                 <span className="text-sm text-ink-faint w-[104px] shrink-0">
                   <span className="block tabular-nums">
-                    {new Date(a.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' })}
+                    {new Date(a.date).toLocaleDateString('fr-FR', { timeZone: 'UTC', weekday: 'short', day: 'numeric' })}
                   </span>
                   <span className="block text-xs font-medium text-ink-muted mt-0.5">{NOM_CANAL[a.canal]}</span>
                 </span>
@@ -299,7 +304,7 @@ export function Resultats() {
                 <div className="mt-2.5 h-1.5 rounded-pill bg-inset overflow-hidden">
                   <span
                     className="block h-full bg-red rounded-pill"
-                    style={{ width: `${Math.min(100, (c.videosLivrees / c.videosAttendues) * 100)}%` }}
+                    style={{ width: `${c.videosAttendues > 0 ? Math.min(100, (c.videosLivrees / c.videosAttendues) * 100) : 0}%` }}
                   />
                 </div>
               </li>
@@ -317,12 +322,12 @@ export function Resultats() {
               <Rangee key={l.mois}>
                 <Case>
                   <span className="font-medium">{libelleMois(l.mois)}</span>
-                  {l.mois === d.periode.fin.slice(0, 7) && (
+                  {l.mois === jourUTC().slice(0, 7) && (
                     <span className="text-[11px] text-ink-faint ml-2">en cours</span>
                   )}
                 </Case>
-                <Case mono aDroite>{euro(l.bilan.depense)}</Case>
-                <Case mono aDroite>{euro(l.bilan.ca)}</Case>
+                <Case mono aDroite>{l.bilan.couverture.plateformes.length ? euro(l.bilan.depense) : '—'}</Case>
+                <Case mono aDroite>{l.bilan.couverture.joursCa ? euro(l.bilan.ca) : '—'}</Case>
                 <Case mono aDroite>{ratio(l.bilan.mer)}</Case>
                 <Case aDroite>
                   <Link
