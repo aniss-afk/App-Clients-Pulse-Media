@@ -26,9 +26,27 @@ Une absence de données produit un état vide ; une erreur de lecture reste visi
 ## Vérification
 
 ```bash
+npm test
 npm run typecheck
 npm run build
 ```
 
 Le dépôt Admin contient `tests/pont-espaces.test.mjs` : fonctions SQL avec RLS,
 isolation de deux boutiques, services réels compilés, erreurs et absence de repli sur des données fictives.
+
+## Périodes et données manquantes
+
+Les sélecteurs 7/30/90 jours couvrent des jours civils UTC terminés, jusqu’à hier.
+Les comparaisons demandent une couverture complète des deux périodes et le même
+périmètre publicitaire. Les totaux partiels sont accompagnés du nombre de jours
+reçus ; les ratios et variations indisponibles restent masqués. Une source
+absente dans le graphique est un trou, pas un zéro.
+
+Le mois courant est arrêté à hier et comparé aux mêmes numéros de jours du mois
+précédent. Si celui-ci est trop court, aucune variation n’est affichée. Les
+historiques CA et publicité sont lus par pages, avec vérification du total annoncé.
+Une interruption de lecture ne publie pas une somme incomplète.
+
+`npm test` vérifie les périodes, la couverture, la pagination et le rendu du
+graphique ; les mêmes cas sont rejoués sous UTC, Europe/Paris et Los Angeles.
+Les données de ces tests restent confinées au processus de test.

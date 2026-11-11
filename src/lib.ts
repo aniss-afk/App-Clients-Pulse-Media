@@ -22,13 +22,13 @@ export const compact = (n: number) => {
 };
 
 export const dateCourte = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—';
+  iso ? new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'UTC', day: 'numeric', month: 'short' }) : '—';
 
 export const dateLongue = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+  iso ? new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }) : '—';
 
 export const mois = (m: string) =>
-  new Date(`${m}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  new Date(`${m}-01`).toLocaleDateString('fr-FR', { timeZone: 'UTC', month: 'long', year: 'numeric' });
 
 export const ratio = (n: number | null, decimales = 1) =>
   n === null ? '—' : `${n.toFixed(decimales).replace('.', ',')}×`;

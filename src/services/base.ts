@@ -1,4 +1,5 @@
 import { supabase } from '../auth/supabase';
+import { lireHistorique } from './pagination';
 import type {
   ActionAgence,
   CaJour,
@@ -153,12 +154,10 @@ export async function etapes(): Promise<Etape[] | null> {
 }
 
 export async function metriques(): Promise<MetriqueJour[] | null> {
-  const { data, error } = await supabase
+  const data = await lireHistorique((debut, fin) => supabase
     .from('metriques_jour')
-    .select('plateforme, date, depense, impressions, clics, conversions, revenu_attribue')
-    .order('date');
-  if (error) throw new Error(error.message);
-  if (!data) return [];
+    .select('plateforme, date, depense, impressions, clics, conversions, revenu_attribue', { count: 'exact' })
+    .order('date').order('plateforme').range(debut, fin));
   return data.map((m) => ({
     plateforme: (m.plateforme as Plateforme) ?? 'meta',
     date: jour(m.date),
@@ -171,12 +170,10 @@ export async function metriques(): Promise<MetriqueJour[] | null> {
 }
 
 export async function ca(): Promise<CaJour[] | null> {
-  const { data, error } = await supabase
+  const data = await lireHistorique((debut, fin) => supabase
     .from('ca_jour')
-    .select('date, ca, commandes, nouveaux_clients')
-    .order('date');
-  if (error) throw new Error(error.message);
-  if (!data) return [];
+    .select('date, ca, commandes, nouveaux_clients', { count: 'exact' })
+    .order('date').range(debut, fin));
   return data.map((c) => ({
     date: jour(c.date),
     ca: num(c.ca),

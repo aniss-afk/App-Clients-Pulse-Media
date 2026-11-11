@@ -8,10 +8,14 @@ import {
   NOM_PLATEFORME,
   Plateforme,
   bilan,
-  periodeDuMois,
-  periodePrecedente,
+  couvertureTexte,
+  moisValide,
+  jourUTC,
+  periodeRapport,
+  periodeMoisPrecedent,
+  PERIODE_VIDE,
   serieJournaliere,
-  variation,
+  variationsComparables,
 } from '../services/espaceClient';
 import { compact, euro, mois as libelleMois, nombre, ratio } from '../lib';
 
@@ -34,15 +38,21 @@ function Corps() {
   const { mois } = useParams<{ mois: string }>();
   const d = useDonnees();
   const m = mois ?? d.periode.fin.slice(0, 7);
-  const periode = useMemo(() => periodeDuMois(m), [m]);
+  const periode = useMemo(() => moisValide(m) ? periodeRapport(m) : PERIODE_VIDE, [m]);
 
   const actuel = useMemo(() => bilan(d.metriques, d.ca, periode), [d.metriques, d.ca, periode]);
   const avant = useMemo(
-    () => bilan(d.metriques, d.ca, periodePrecedente(periode)),
+    () => {
+      const precedente = periodeMoisPrecedent(periode);
+      return precedente ? bilan(d.metriques, d.ca, precedente) : null;
+    },
     [d.metriques, d.ca, periode],
   );
   const serie = useMemo(() => serieJournaliere(d.metriques, d.ca, periode), [d.metriques, d.ca, periode]);
 
+  const deltas = variationsComparables(actuel, avant);
+
+  if (!moisValide(m)) return <p className="p-10 text-sm text-ink-faint">Mois introuvable.</p>;
   if (d.chargement) return <p className="p-10 text-sm text-ink-faint">Chargement…</p>;
 
   const plateformes = Object.keys(actuel.depenseParPlateforme).sort() as Plateforme[];
@@ -58,24 +68,24 @@ function Corps() {
      baisse, la phrase le dit. */
   const lecture: string[] = [];
   if (actuel.mer !== null) {
-    const varMer = avant.mer !== null ? variation(actuel.mer, avant.mer) : null;
+    const varMer = deltas.mer;
     lecture.push(
       `Chaque euro investi en publicité a rapporté ${ratio(actuel.mer)} de chiffre d'affaires` +
-        (varMer === null || Math.abs(varMer) < 0.5
-          ? ', stable par rapport au mois précédent.'
+        (varMer === null ? '.' : Math.abs(varMer) < 0.5
+          ? ', stable par rapport aux mêmes jours du mois précédent.'
           : varMer > 0
-            ? `, en hausse de ${Math.round(varMer)} % sur le mois précédent.`
-            : `, en baisse de ${Math.abs(Math.round(varMer))} % sur le mois précédent.`),
+            ? `, en hausse de ${Math.round(varMer)} % sur les mêmes jours du mois précédent.`
+            : `, en baisse de ${Math.abs(Math.round(varMer))} % sur les mêmes jours du mois précédent.`),
     );
   }
   if (actuel.cpa !== null) {
     lecture.push(
-      `Un nouveau client a coûté ${euro(actuel.cpa)} à acquérir, pour ${(actuel.nouveauxClients === null ? '—' : nombre(actuel.nouveauxClients))} nouveaux clients sur le mois.`,
+      `Un nouveau client a coûté ${euro(actuel.cpa)} à acquérir, pour ${(actuel.nouveauxClients === null ? '—' : nombre(actuel.nouveauxClients))} nouveaux clients sur la période.`,
     );
   }
   if (creations.length > 0) {
     lecture.push(
-      `${creations.length} vidéo${creations.length > 1 ? 's' : ''} mise${creations.length > 1 ? 's' : ''} en ligne, ${compact(vues)} vues, ${ventes} vente${ventes > 1 ? 's' : ''} attribuée${ventes > 1 ? 's' : ''} aux codes promo.`,
+      `${creations.length} vidéo${creations.length > 1 ? 's' : ''} mise${creations.length > 1 ? 's' : ''} en ligne, ${compact(vues)} vues cumulées à ce jour, ${ventes} vente${ventes > 1 ? 's' : ''} attribuée${ventes > 1 ? 's' : ''} aux codes promo.`,
     );
   }
 
@@ -99,24 +109,24 @@ function Corps() {
           <div>
             <img src="/logo.webp" alt="Pulse Media" className="h-[22px] w-auto mb-5" />
             <h1 className="text-3xl font-bold tracking-[-0.02em]">{d.marque?.nom}</h1>
-            <p className="mt-1 text-md text-ink-muted">Rapport de {libelleMois(m)}</p>
+            <p className="mt-1 text-md text-ink-muted">Rapport de {libelleMois(m)}{periode.debut <= periode.fin && m === jourUTC().slice(0, 7) ? ` · au ${Number(periode.fin.slice(8, 10))}` : ''}</p>
           </div>
           <p className="text-xs text-ink-faint text-right leading-relaxed">
             {d.marque?.contact}
             <br />
             Établi le{' '}
-            {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date().toLocaleDateString('fr-FR', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </header>
 
         <section className="pt-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-line border border-line rounded-card overflow-hidden">
-            <Chiffre label="Dépense publicitaire" valeur={euro(actuel.depense)} delta={variation(actuel.depense, avant.depense)} />
-            <Chiffre label="Chiffre d'affaires" valeur={euro(actuel.ca)} delta={variation(actuel.ca, avant.ca)} sous={`${nombre(actuel.commandes)} commandes`} />
+            <Chiffre label="Dépense publicitaire" valeur={plateformes.length ? euro(actuel.depense) : '—'} delta={deltas.depense} sous={couvertureTexte(actuel, 'pub')} />
+            <Chiffre label="Chiffre d'affaires" valeur={actuel.couverture.joursCa ? euro(actuel.ca) : '—'} delta={deltas.ca} sous={couvertureTexte(actuel, 'ca') ?? `${nombre(actuel.commandes)} commandes`} />
             <Chiffre
               label="Retour sur dépense"
               valeur={ratio(actuel.mer)}
-              delta={actuel.mer !== null && avant.mer !== null ? variation(actuel.mer, avant.mer) : null}
+              delta={deltas.mer}
               fort
             />
             <Chiffre
@@ -144,7 +154,7 @@ function Corps() {
         <section className="pt-8">
           <Titre>Par canal</Titre>
           {plateformes.length === 0 ? (
-            <p className="text-sm text-ink-faint">Aucune dépense sur le mois.</p>
+            <p className="text-sm text-ink-faint">Aucune dépense reçue sur la période.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -250,8 +260,8 @@ function Chiffre({
           {fort ? <Surligne>{valeur}</Surligne> : valeur}
         </p>
         <p className="text-xs mt-1 text-ink-faint">
-          {delta !== undefined && <Delta v={delta} />}
-          {delta !== undefined && sous && ' · '}
+          {delta !== undefined && delta !== null && <Delta v={delta} />}
+          {delta !== undefined && delta !== null && sous && ' · '}
           {sous}
         </p>
       </div>
