@@ -152,7 +152,7 @@ export function Resultats() {
             {
               label: 'Coût par nouveau client',
               valeur: actuel.cpa !== null ? euro(actuel.cpa) : '—',
-              sous: `${actuel.nouveauxClients} nouveaux clients`,
+              sous: actuel.nouveauxClients === null ? 'Nouveaux clients non renseignés' : `${actuel.nouveauxClients} nouveaux clients`,
             },
           ]}
         />
@@ -358,6 +358,8 @@ function PanneauDemande({ onFermer, onFait }: { onFermer: () => void; onFait: ()
       await envoyerDemande(texte.trim());
       await onFait();
       onFermer();
+    } catch (e) {
+      setFaute((e as Error).message || 'La demande n’a pas été envoyée.');
     } finally {
       setEnCours(false);
     }

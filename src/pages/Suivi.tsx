@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDonnees } from '../donnees';
 import { Entete, Statut, Vide, Zone } from '../ui/pieces';
-import { NOM_CANAL } from '../services/espaceClient';
+import { NOM_CANAL, repondreSuivi, type SuiviClient } from '../services/espaceClient';
 import { dateLongue, euro } from '../lib';
 
 /**
@@ -29,7 +29,7 @@ type Ligne = {
 };
 
 export function Suivi() {
-  const { etapes, actions, campagnes, chargement } = useDonnees();
+  const { etapes, actions, campagnes, chargement, suivi, rapports, recharger } = useDonnees();
 
   const produitDe = useMemo(() => new Map(campagnes.map((c) => [c.id, c.produit])), [campagnes]);
 
@@ -66,6 +66,12 @@ export function Suivi() {
     <>
       <Entete titre="Suivi" sous="Ce qui est prévu, ce qui a été fait, dans l'ordre." />
 
+      <Zone titre="Demandes de l'agence" compte={suivi.filter(x => x.statut === 'ouverte').length}>
+        {suivi.length === 0 ? <Vide>Aucune demande partagée.</Vide> : <ul className="divide-y divide-line">{suivi.map(l => <LigneSuivi key={`${l.type}-${l.id}`} ligne={l} onFait={recharger} />)}</ul>}
+      </Zone>
+      <Zone titre="Rapports partagés" compte={rapports.length}>
+        {rapports.length === 0 ? <Vide>Aucun rapport publié par l'agence.</Vide> : <ul className="divide-y divide-line">{rapports.map(r => <li key={r.id} className="px-5 py-4"><details><summary className="cursor-pointer font-medium">Rapport {r.periode === 'hebdo' ? 'hebdomadaire' : 'mensuel'} · {dateLongue(r.debut)} → {dateLongue(r.fin)}</summary><p className="mt-3 whitespace-pre-wrap text-sm">{r.contenu ?? 'Le rapport est disponible dans le document joint.'}</p>{r.drive_url?.startsWith('https://') && <a className="text-sm underline" href={r.drive_url} target="_blank" rel="noopener noreferrer">Ouvrir le document</a>}</details></li>)}</ul>}
+      </Zone>
       <Zone titre="Campagnes" compte={campagnes.length}>
         {campagnes.length === 0 ? (
           <Vide>Aucune campagne pour le moment.</Vide>
@@ -142,4 +148,11 @@ function Frise({ lignes, passe = false }: { lignes: Ligne[]; passe?: boolean }) 
       ))}
     </ol>
   );
+}
+
+function LigneSuivi({ligne:l,onFait}:{ligne:SuiviClient;onFait:()=>Promise<void>}) {
+  const [motif,setMotif]=useState(''); const [erreur,setErreur]=useState(''); const [envoi,setEnvoi]=useState(false);
+  async function repondre(decision:'valider'|'refuser'|'terminer') { setEnvoi(true);setErreur('');try {await repondreSuivi(l.type,l.id,decision,motif);await onFait();}catch(e){setErreur((e as Error).message);}finally{setEnvoi(false);} }
+  const actionnable=l.statut==='ouverte' && (l.genre==='a_valider'||l.genre==='attente_marque');
+  return <li className="px-5 py-4"><p className="font-medium">{l.titre}</p>{l.detail && <p className="text-sm text-ink-muted whitespace-pre-line">{l.detail}</p>}<p className="text-xs text-ink-faint mt-1">{l.echeance ? `Échéance : ${dateLongue(l.echeance)} · `:''}{({ouverte:'En attente',validee:'Validée',refusee:'Retour envoyé',terminee:'Terminée',ecartee:'Écartée'} as Record<string,string>)[l.statut] ?? l.statut}</p>{l.reponse && <p className="text-sm mt-2">Votre réponse : {l.reponse}</p>}{actionnable && <div className="mt-3 flex flex-wrap gap-3 items-center">{l.genre==='a_valider' ? <><button disabled={envoi} type="button" onClick={()=>void repondre('valider')} className="text-sm underline">Valider</button><label className="text-sm">Votre retour <input value={motif} onChange={e=>setMotif(e.target.value)} className="border border-line rounded-box p-2" /></label><button disabled={envoi} type="button" onClick={()=>void repondre('refuser')} className="text-sm underline">Demander une modification</button></>:<button disabled={envoi} type="button" onClick={()=>void repondre('terminer')} className="text-sm underline">C'est fait</button>}</div>}{erreur && <p role="alert" className="text-sm text-red-ink mt-2">{erreur}</p>}</li>;
 }

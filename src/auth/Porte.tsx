@@ -33,6 +33,7 @@ export function Porte({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(Boolean(data.session));
       if (data.session) void relire();
