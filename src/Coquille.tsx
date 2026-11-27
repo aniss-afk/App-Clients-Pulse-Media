@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Grid2X2, LogOut, Route, Settings, TrendingUp } from 'lucide-react';
+import { IcCalendrier, IcGrille, IcVideo } from './ui/IconesQG';
+import { LogOut, Settings } from 'lucide-react';
 import { DonneesProvider, useDonnees } from './donnees';
 import { deconnecter } from './auth/supabase';
 import { useMoi } from './auth/Porte';
@@ -16,9 +17,9 @@ import { cn } from './lib';
  * menu du compte, comme dans l'espace créateur.
  */
 const ONGLETS = [
-  { chemin: '/', libelle: 'Vue d’ensemble', exact: true, Icone: TrendingUp },
-  { chemin: '/creations', libelle: 'Matrice et créations', compteur: true, Icone: Grid2X2 },
-  { chemin: '/suivi', libelle: 'Suivi', Icone: Route },
+  { chemin: '/', libelle: 'Vue d’ensemble', exact: true, Icone: IcGrille },
+  { chemin: '/creations', libelle: 'Matrice et créations', compteur: true, Icone: IcVideo },
+  { chemin: '/suivi', libelle: 'Suivi', Icone: IcCalendrier },
 ] as const;
 
 
@@ -42,7 +43,7 @@ function Barre({ etendue = false, onNaviguer }: { etendue?: boolean; onNaviguer?
   const lien = ({ isActive }: { isActive: boolean }) =>
     cn(
       'relative flex items-center gap-3 h-10 px-3 rounded-box text-md whitespace-nowrap transition-colors',
-      isActive ? 'bg-ink text-paper font-medium' : 'text-ink-muted hover:text-ink hover:bg-inset',
+      isActive ? 'bg-red-pale text-red-ink font-medium' : 'text-ink-muted hover:text-ink hover:bg-inset',
     );
 
   return (
@@ -53,7 +54,7 @@ function Barre({ etendue = false, onNaviguer }: { etendue?: boolean; onNaviguer?
       )}
     >
       <div className="relative h-7 mb-8 px-1.5">
-        <img src="/favicon.png" alt="" width={28} height={28} className={cn(ferme, 'h-7 w-7 rounded-box')} />
+        <img src="/pulse.svg" alt="Pulse Media" width={28} height={28} className={cn(ferme, 'h-7 w-7 rounded-box')} />
         <img
           src="/logo.webp"
           alt="Pulse Media"

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, MessageSquare, X } from 'lucide-react';
+import { IcCoche as Check, IcCroix as X } from '../ui/IconesQG';
+import { MessageSquare } from 'lucide-react';
 import { dateCourte, euro, nombre, ratio } from '../lib';
 import { supabase } from '../auth/supabase';
 import { envoyerDemande } from '../services/espaceClient';
