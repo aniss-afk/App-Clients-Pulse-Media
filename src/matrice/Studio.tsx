@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCheck, ChevronRight, Grid2X2, MessageSquare } from 'lucide-react';
 import { dateCourte, euro, nombre, ratio } from '../lib';
@@ -263,7 +263,7 @@ function Accords({ data, ouvrir }: { data: Lecture; ouvrir: (d: Decision) => voi
     </section>
   );
 }
-export function Studio({ accueil = false }: { accueil?: boolean }) {
+export function Studio({ accueil = false, bilan }: { accueil?: boolean; bilan?: ReactNode }) {
   const [duree, setDuree] = useState(30);
   const periode = periodeGlissante(duree);
   const jours = useMemo(() => joursDePeriode(periode), [periode.debut, periode.fin]);
@@ -273,14 +273,17 @@ export function Studio({ accueil = false }: { accueil?: boolean }) {
     [decision, setDecision] = useState<Decision | null>(null);
   if (!data)
     return (
-      <div className="mx-surface mx-note" role="status">
-        {erreur ?? 'Chargement du Studio…'}{' '}
-        {erreur && (
-          <button className="mx-lien" onClick={recharger}>
-            Réessayer
-          </button>
-        )}
-      </div>
+      <>
+        {bilan}
+        <div className="mx-surface mx-note" role="status">
+          {erreur ?? 'Chargement du Studio…'}{' '}
+          {erreur && (
+            <button className="mx-lien" onClick={recharger}>
+              Réessayer
+            </button>
+          )}
+        </div>
+      </>
     );
   const recents = data.creations.slice(0, 3),
     actuel = recents.find((r) => r.id === choix) ?? recents[0];
@@ -299,7 +302,10 @@ export function Studio({ accueil = false }: { accueil?: boolean }) {
     <div className="mx-studio">
       {accueil ? (
         <>
-          <Accords data={data} ouvrir={setDecision} />
+          <div className="mx-overview">
+            {bilan}
+            <Accords data={data} ouvrir={setDecision} />
+          </div>
           <section className="mx-surface">
             <header>
               <h2>Studio</h2>

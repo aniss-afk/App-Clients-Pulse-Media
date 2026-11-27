@@ -237,6 +237,27 @@ export function DetailBloc({
   ouvrir: (decision: Decision) => void;
 }) {
   const lecture = comparaison(bloc);
+  const temoin = [...bloc.rendus]
+    .filter((r) => bloc.mesures.some((m) => m.id === r.id))
+    .sort(
+      (a, b) =>
+        (total(bloc.mesures.filter((m) => m.id === b.id)).depense ?? 0) -
+        (total(bloc.mesures.filter((m) => m.id === a.id)).depense ?? 0),
+    )[0];
+  const piste =
+    temoin &&
+    (lecture.ton === 'positif'
+      ? 'Reprendre « ' +
+        temoin.titre +
+        ' » et ne changer que l’accroche. Comparer les achats à audience et budget comparables.'
+      : lecture.ton === 'surveiller'
+        ? 'Tester une autre preuve dans « ' +
+          temoin.titre +
+          ' » en gardant la même offre et la même audience.'
+        : 'Conserver « ' +
+          temoin.titre +
+          ' » comme témoin et attendre davantage de résultats comparables avant de choisir une variante.');
+
   const [idee, setIdee] = useState(''),
     [statut, setStatut] = useState(''),
     [enCours, setEnCours] = useState(false);
@@ -288,6 +309,11 @@ export function DetailBloc({
       </section>
       <section>
         <h3>Prochain test</h3>
+        {piste && (
+          <p className="mx-note">
+            <strong>Piste à discuter</strong> · {piste}
+          </p>
+        )}
         {bloc.rendus
           .filter((r) => r.test_prevu_le && r.test_prevu_le > fin)
           .map((r) => (

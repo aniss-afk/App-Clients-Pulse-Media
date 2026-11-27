@@ -102,6 +102,14 @@ export function Resultats() {
         }
       />
 
+      <Studio accueil bilan={
+        <section className="mx-surface mx-ventes">
+          <h2>Ventes boutique</h2>
+          <p className="mx-total">{actuel.couverture.joursCa ? euro(actuel.ca) : '—'}</p>
+          <p className="mx-note">{actuel.couverture.joursCa ? nombre(actuel.commandes)+' commandes' : 'Ventes non renseignées'}{plateformes.length > 0 && ' · '+euro(actuel.depense)+' de dépenses publicitaires'}</p>
+          <GraphiqueDepenseCa points={serie} hauteur={180} />
+        </section>
+      } />
       {aValider.length > 0 && (
         <Zone titre="Vidéos à valider" compte={aValider.length}>
           {/* Le filet rouge court sur toute la zone plutôt que sur
@@ -134,6 +142,7 @@ export function Resultats() {
         </Zone>
       )}
 
+      <details className="mb-5 mx-surface"><summary>Indicateurs de la période</summary>
       <section className="mb-5">
         <Mesures
           items={[
@@ -165,13 +174,7 @@ export function Resultats() {
         />
       </section>
 
-      <Zone titre="Jour par jour">
-        <div className="p-5 sm:p-6">
-          <GraphiqueDepenseCa points={serie} hauteur={180} />
-        </div>
-      </Zone>
-
-      <Studio accueil />
+      </details>
 
       <Zone
         titre="Ce qu'on a fait"
