@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Clapperboard, LogOut, Route, Settings, TrendingUp } from 'lucide-react';
+import { Grid2X2, LogOut, Route, Settings, TrendingUp } from 'lucide-react';
 import { DonneesProvider, useDonnees } from './donnees';
 import { deconnecter } from './auth/supabase';
 import { useMoi } from './auth/Porte';
@@ -16,8 +16,8 @@ import { cn } from './lib';
  * menu du compte, comme dans l'espace créateur.
  */
 const ONGLETS = [
-  { chemin: '/', libelle: 'Résultats', exact: true, Icone: TrendingUp },
-  { chemin: '/creations', libelle: 'Créations', compteur: true, Icone: Clapperboard },
+  { chemin: '/', libelle: 'Vue d’ensemble', exact: true, Icone: TrendingUp },
+  { chemin: '/creations', libelle: 'Matrice et créations', compteur: true, Icone: Grid2X2 },
   { chemin: '/suivi', libelle: 'Suivi', Icone: Route },
 ] as const;
 

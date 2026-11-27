@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Marches } from '../matrice/Marches';
+import { Studio } from '../matrice/Studio';
 import { ChevronRight } from 'lucide-react';
 import { useDonnees } from '../donnees';
 import { Case, ChoixPeriode, Bouton, Entete, Mesures, Rangee, Statut, Tableau, Vide, Zone } from '../ui/pieces';
@@ -87,7 +89,7 @@ export function Resultats() {
   return (
     <>
       <Entete
-        titre={`Bonjour, ${d.marque?.contact.split(' ')[0] ?? ''}`}
+        titre="Vue d’ensemble"
         /* Ni le nom de la marque ni la longueur de la période : elle
            sait chez qui elle est, et le sélecteur à droite dit déjà
            « 30 j ». Un sous-titre qui ne raconte rien vaut moins que
@@ -101,7 +103,7 @@ export function Resultats() {
       />
 
       {aValider.length > 0 && (
-        <Zone titre="On vous attend" compte={aValider.length}>
+        <Zone titre="Vidéos à valider" compte={aValider.length}>
           {/* Le filet rouge court sur toute la zone plutôt que sur
               chaque ligne : c'est le bloc qui demande une réponse, pas
               chaque vidéo séparément. Trois traits empilés donnaient
@@ -169,50 +171,7 @@ export function Resultats() {
         </div>
       </Zone>
 
-      <Zone titre="Par canal" compte={plateformes.length}>
-        {plateformes.length === 0 ? (
-          <Vide>Aucune dépense reçue sur la période.</Vide>
-        ) : (
-          <>
-            <Tableau colonnes={['Canal', 'Dépense', 'Part', 'Retour déclaré']}>
-              {plateformes.map((pf) => (
-                <Rangee key={pf}>
-                  <Case>{NOM_PLATEFORME[pf] ?? pf}</Case>
-                  <Case mono aDroite>{euro(actuel.depenseParPlateforme[pf])}</Case>
-                  <Case mono aDroite>
-                    {actuel.depense > 0
-                      ? `${Math.round((actuel.depenseParPlateforme[pf] / actuel.depense) * 100)} %`
-                      : '—'}
-                  </Case>
-                  <Case mono aDroite>{ratio(actuel.roasParPlateforme[pf])}</Case>
-                </Rangee>
-              ))}
-            </Tableau>
-            {surAttribution !== null && (
-              <p className="px-5 pb-5 pt-3 text-sm text-ink-muted leading-relaxed">
-                Mises bout à bout, les plateformes s&apos;attribuent{' '}
-                <strong className="text-ink">{euro(actuel.revenuAttribue)}</strong> de revenu, soit{' '}
-                <strong className="text-ink">{Math.round(surAttribution)} %</strong> de votre chiffre
-                d&apos;affaires réel de {euro(actuel.ca)}. Chacune compte les mêmes ventes : c&apos;est
-                normal, et c&apos;est pour ça qu&apos;on ne les additionne pas. Le retour sur dépense
-                plus haut, calculé sur la boutique, est le chiffre à suivre.
-              </p>
-            )}
-            <div className="grid gap-px bg-line sm:grid-cols-3 border-t border-line">
-              {[
-                { label: 'Impressions', valeur: nombre(impressions) },
-                { label: 'Clics', valeur: nombre(clics) },
-                { label: 'Coût par clic', valeur: clics > 0 ? euro(actuel.depense / clics) : '—' },
-              ].map((m) => (
-                <div key={m.label} className="bg-paper px-5 py-4">
-                  <p className="text-sm font-medium text-ink-muted">{m.label}</p>
-                  <p className="text-lg font-bold tracking-[-0.02em] tabular-nums mt-1.5">{m.valeur}</p>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </Zone>
+      <Studio accueil />
 
       <Zone
         titre="Ce qu'on a fait"
@@ -340,6 +299,52 @@ export function Resultats() {
               </Rangee>
             ))}
           </Tableau>
+        )}
+      </Zone>
+
+      <Marches debut={d.periode.debut} fin={d.periode.fin} />
+      <Zone titre="Par canal" compte={plateformes.length}>
+        {plateformes.length === 0 ? (
+          <Vide>Aucune dépense reçue sur la période.</Vide>
+        ) : (
+          <>
+            <Tableau colonnes={['Canal', 'Dépense', 'Part', 'Retour déclaré']}>
+              {plateformes.map((pf) => (
+                <Rangee key={pf}>
+                  <Case>{NOM_PLATEFORME[pf] ?? pf}</Case>
+                  <Case mono aDroite>{euro(actuel.depenseParPlateforme[pf])}</Case>
+                  <Case mono aDroite>
+                    {actuel.depense > 0
+                      ? `${Math.round((actuel.depenseParPlateforme[pf] / actuel.depense) * 100)} %`
+                      : '—'}
+                  </Case>
+                  <Case mono aDroite>{ratio(actuel.roasParPlateforme[pf])}</Case>
+                </Rangee>
+              ))}
+            </Tableau>
+            {surAttribution !== null && (
+              <p className="px-5 pb-5 pt-3 text-sm text-ink-muted leading-relaxed">
+                Mises bout à bout, les plateformes s&apos;attribuent{' '}
+                <strong className="text-ink">{euro(actuel.revenuAttribue)}</strong> de revenu, soit{' '}
+                <strong className="text-ink">{Math.round(surAttribution)} %</strong> de votre chiffre
+                d&apos;affaires réel de {euro(actuel.ca)}. Chacune compte les mêmes ventes : c&apos;est
+                normal, et c&apos;est pour ça qu&apos;on ne les additionne pas. Le retour sur dépense
+                plus haut, calculé sur la boutique, est le chiffre à suivre.
+              </p>
+            )}
+            <div className="grid gap-px bg-line sm:grid-cols-3 border-t border-line">
+              {[
+                { label: 'Impressions', valeur: nombre(impressions) },
+                { label: 'Clics', valeur: nombre(clics) },
+                { label: 'Coût par clic', valeur: clics > 0 ? euro(actuel.depense / clics) : '—' },
+              ].map((m) => (
+                <div key={m.label} className="bg-paper px-5 py-4">
+                  <p className="text-sm font-medium text-ink-muted">{m.label}</p>
+                  <p className="text-lg font-bold tracking-[-0.02em] tabular-nums mt-1.5">{m.valeur}</p>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </Zone>
 

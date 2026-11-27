@@ -5,6 +5,7 @@ import { Panneau, Texte } from '../ui/Panneau';
 import { Creation, demanderRevision, validerCreation } from '../services/espaceClient';
 import { compact, dateLongue, nombre } from '../lib';
 import { Voir } from '../ui/Video';
+import { Studio } from '../matrice/Studio';
 import { Profils } from '../ui/Profils';
 
 /**
@@ -55,9 +56,10 @@ export function Creations() {
   return (
     <>
       <Entete
-        titre="Créations"
-        sous="Chaque vidéo produite pour vous, et qui l'a faite."
+        titre="Matrice et créations"
       />
+
+      <Studio />
 
       {erreur && <p role="alert" className="text-sm text-red-ink mb-4">{erreur}</p>}
 
@@ -92,7 +94,7 @@ export function Creations() {
         </Zone>
       )}
 
-      <Zone titre="À valider" compte={attente.length}>
+      <Zone titre="Vidéos créateurs à valider" compte={attente.length}>
         {attente.length === 0 ? (
           <Vide>Rien n&apos;attend votre retour.</Vide>
         ) : (

@@ -7,10 +7,10 @@ export default {
         /* La charte de l'agence, à l'identique. Une marque qui reçoit un
            rapport signé Pulse Media doit reconnaître l'objet quand elle
            ouvre son espace. */
-        cream: '#F1EDE3',
-        paper: '#FFFDF9',
-        inset: '#F4F0E6',
-        deep: '#E7E1D5',
+        cream: '#F6F6F8',
+        paper: '#FFFFFF',
+        inset: '#F1F1F4',
+        deep: '#E5E5E9',
 
         ink: '#12110F',
         'ink-muted': '#575450',
@@ -19,8 +19,8 @@ export default {
         /* Le rouge est un aplat et une marque, jamais du texte en petit
            corps : sur le crème il plafonne à 3,1:1. C'est `red-ink` qui
            porte les mots. */
-        red: '#FF3B30',
-        'red-ink': '#B32419',
+        red: '#D7263D',
+        'red-ink': '#A61F33',
         'red-pale': '#FFE9E6',
         'red-soft': '#FFD2CC',
 
@@ -47,7 +47,7 @@ export default {
       },
 
       fontFamily: {
-        sans: ['Archivo', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Satoshi', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
       fontSize: {
