@@ -30,6 +30,7 @@ export function App() {
         <Route path="/rapports/:mois" element={<Rapport />} />
         <Route element={<Coquille />}>
           <Route index element={<Resultats />} />
+          <Route path="matrice" element={<Navigate to="/creations" replace />} />
           <Route path="creations" element={<Creations />} />
           <Route path="suivi" element={<Suivi />} />
           <Route path="reglages" element={<Reglages />} />
